@@ -64,8 +64,7 @@ FD_DEFAULTS = objdict(
         "max_rand_steps": 0,
         "instance_set_path": "../instance_sets/fast_downward/train",
         "test_set_path": "../instance_sets/fast_downward/test",
-        "fd_path": Path(__file__).resolve().parent
-        + "/../envs/rl-plan/fast-downward/fast-downward.py",
+        "fd_path": Path(__file__).resolve().parent / "/../envs/rl-plan/fast-downward/fast-downward.py",
         "parallel": True,
         "fd_logs": None,
         "benchmark_info": INFO,

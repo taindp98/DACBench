@@ -354,7 +354,6 @@ class AbstractEnv(ABC, gym.Env):
         # but it can be to large see issue https://github.com/openai/gym/issues/2210
         rng = np.random.default_rng(seed)
         random.seed(seed)
-        rng.seed(seed)
         self.np_random, seed = seeding.np_random(int(seed))
         # uses the uncorrelated seed from seeding but makes sure that no
         # randomness is introduced.
