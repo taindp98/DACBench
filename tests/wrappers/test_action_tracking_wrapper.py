@@ -41,7 +41,7 @@ class TestActionTrackingWrapper(unittest.TestCase):
         action_logger.close()
 
         logs = load_logs(action_logger.get_logfile())
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
 
         expected_actions = pd.DataFrame(
             {
@@ -73,7 +73,8 @@ class TestActionTrackingWrapper(unittest.TestCase):
                 * 10,
             }
         )
-
+        print(dataframe.columns)
+        print(expected_actions.columns)
         for column in expected_actions.columns:
             # todo: seems to be an bug here. Every so ofter the last action is missing.
             # Double checked not a logging problem. Could be a seeding issue
@@ -111,7 +112,7 @@ class TestActionTrackingWrapper(unittest.TestCase):
         action_logger.close()
 
         logs = load_logs(action_logger.get_logfile())
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
 
         expected_actions = [action] * 80
 

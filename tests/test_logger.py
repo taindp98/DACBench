@@ -113,7 +113,6 @@ class TestLogger(unittest.TestCase):
 
         dataframe = log2dataframe(
             logs,
-            wide=True,
         )
         assert (dataframe.logged_step == dataframe.step).all()
         assert (dataframe.logged_episode == dataframe.episode).all()
@@ -178,7 +177,7 @@ class TestModuleLogger(unittest.TestCase):
         with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        wide = log2dataframe(logs, wide=True)
+        wide = log2dataframe(logs)
         long = log2dataframe(logs, drop_columns=None)
 
         assert len(wide) == 1
@@ -239,7 +238,7 @@ class TestModuleLogger(unittest.TestCase):
         with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
         assert dataframe.iloc[0].state == (1, 2, 3)
 
     def test_numpy_logging(self):
@@ -261,7 +260,7 @@ class TestModuleLogger(unittest.TestCase):
         with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
 
         expected_result = (((0,) * 3,) * 3,) * 2
         assert dataframe.iloc[0].np == expected_result

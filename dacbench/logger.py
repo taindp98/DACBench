@@ -105,18 +105,15 @@ def flatten_log_entry(log_entry: dict) -> list[dict]:
             dict(
                 [
                     *top_level_entries,
-                    ("value", value),
-                    ("time", time),
-                    ("name", value_name),
+                    (f"{value_name}", value),
+                    (f"{value_name}_time", time),
                 ]
             )
             for value, time in zip(
                 value_dict["values"], value_dict["times"], strict=False
             )
         )
-
         rows.extend(map(dict, current_rows))
-
     return rows
 
 
@@ -139,7 +136,7 @@ def list_to_tuple(list_: list) -> tuple:
 
 
 def log2dataframe(
-    logs: list[dict], wide: bool = False, drop_columns: list[str] | None = None
+    logs: list[dict], drop_columns: list[str] | None = None
 ) -> pd.DataFrame:
     """Converts a list of log entries to a pandas dataframe.
 
@@ -164,13 +161,11 @@ def log2dataframe(
     dataframe
 
     """
-    if drop_columns is None:
-        drop_columns = ["time"]
     flat_logs = map(flatten_log_entry, logs)
     rows = reduce(lambda l1, l2: l1 + l2, flat_logs)
 
     dataframe = pd.DataFrame(rows)
-    dataframe.time = pd.to_datetime(dataframe.time)
+    # dataframe.time = pd.to_datetime(dataframe.time)
 
     if drop_columns is not None:
         dataframe = dataframe.drop(columns=drop_columns)
@@ -183,20 +178,6 @@ def log2dataframe(
             dataframe.iloc[:, i] = dataframe.iloc[:, i].apply(
                 lambda x: list_to_tuple(x) if isinstance(x, list) else x
             )
-
-    if wide:
-        primary_index_columns = ["episode", "step"]
-        field_id_column = "name"
-        additional_columns = list(
-            set(dataframe.columns)
-            - {*primary_index_columns, "time", "value", field_id_column}
-        )
-        index_columns = primary_index_columns + additional_columns + [field_id_column]
-        dataframe = dataframe.set_index(index_columns)
-        # dataframe = dataframe.pivot_table()
-        dataframe = dataframe.reset_index()
-        print(dataframe.columns)
-        dataframe.columns = [a if b == "" else b for a, b in dataframe.columns]
 
     return dataframe.infer_objects()
 

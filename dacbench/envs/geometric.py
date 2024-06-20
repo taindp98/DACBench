@@ -286,7 +286,7 @@ class GeometricEnv(AbstractEnv):
             """
 
         fig_title = f"GeoBench-Dimensions{len(dimensions)}"
-        fig.savefig(Path(absolute_path) / fig_title + ".jpg")
+        fig.savefig(Path(absolute_path) / f"{fig_title}.jpg")
 
     def render_3d_dimensions(self, dimensions: list, absolute_path: str):
         """Plot 2 Dimensions in 3D space.

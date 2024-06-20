@@ -58,7 +58,7 @@ class TestSGDBenchmark(unittest.TestCase):
         restored_bench = SGDBenchmark.from_json(bench.to_json())
         assert bench.config.keys() == restored_bench.config.keys(), f"Configs should have same keys"
         for k in bench.config.keys():
-            if k in ["reward_range", "observation_space_kwargs"]:
+            if k in ["reward_range", "observation_space_kwargs", "torch_hub_model"]:
                 assert np.allclose(bench.config[k], restored_bench.config[k]), f"Config values should be equal, got: {bench.config[k]} != {restored_bench.config[k]}"
             elif k == "layer_specification":
                 for layer in bench.config[k]:

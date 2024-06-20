@@ -167,8 +167,8 @@ class SigmoidBenchmark(AbstractBenchmark):
                         except Exception:  # noqa: S112, BLE001
                             continue
 
-                if len(f) != 0:
-                    self.config[keyword][inst_id] = f
+                if len(row_values) != 0:
+                    self.config[keyword][inst_id] = row_values
 
     def get_benchmark(self, dimension=None, seed=0):
         """Get Benchmark from DAC paper.
