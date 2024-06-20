@@ -128,7 +128,7 @@ class TheoryBenchmark(AbstractBenchmark):
         low = []
         high = []
         for var_name in obs_var_names:
-            l, h = env_class.get_obs_domain_from_name(var_name)  # noqa: E741
+            l, h = env_class.get_obs_domain_from_name(var_name=var_name)  # noqa: E741
             low.append(l)
             high.append(h)
         return gym.spaces.Box(low=np.array(low), high=np.array(high))
@@ -161,12 +161,12 @@ class TheoryBenchmark(AbstractBenchmark):
         if the file doesn't exist, we look in <DACBench>/dacbench/instance_sets/theory/.
         """
         assert self.config.instance_set_path
-        if Path.isfile(self.config.instance_set_path):
+        if Path(self.config.instance_set_path).is_file():
             path = self.config.instance_set_path
         else:
             path = (
                 Path(__file__).resolve().parent
-                / "/../instance_sets/theory/"
+                / "../instance_sets/theory/"
                 / self.config.instance_set_path
             )
 

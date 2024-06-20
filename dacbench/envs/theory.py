@@ -251,16 +251,16 @@ class LeadingOne(BinaryProblem):
     The aim is to maximise the number of leading (and consecutive) 1 bits in the string
     """
 
-    def __init__(self, n, rng=None, initobj=None):
+    def __init__(self, n, rng=None, initObj=None):  # noqa: N803
         """Make individual."""
         if rng is None:
             rng = np.random.default_rng()
-        if initobj is None:
+        if initObj is None:
             super().__init__(n=n, rng=rng)
         else:
             self.data = rng.choice([True, False], size=n)
-            self.data[: int(initobj)] = True
-            self.data[int(initobj)] = False
+            self.data[: int(initObj)] = True
+            self.data[int(initObj)] = False
             self.n = n
             self.fitness = self.eval()
 
@@ -399,7 +399,8 @@ class TheoryEnv(AbstractEnv):
         if "outdir" in config:
             self.outdir = config.outdir + "/" + str(uuid.uuid4())
 
-    def get_obs_domain_from_name(self, var_name):
+    @staticmethod
+    def get_obs_domain_from_name(var_name):  # noqa: ARG004
         """Get default lower and upperbound of a observation variable based on its name.
 
         The observation space will then be created

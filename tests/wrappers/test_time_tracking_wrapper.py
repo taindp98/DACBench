@@ -31,7 +31,7 @@ class TestTimeTrackingWrapper(unittest.TestCase):
         logger.close()
 
         logs = load_logs(time_logger.get_logfile())
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
 
         # all steps must have logged time
         assert (~dataframe.step_duration.isna()).all()

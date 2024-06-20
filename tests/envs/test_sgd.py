@@ -10,14 +10,15 @@ import torch
 from dacbench import AbstractEnv
 from dacbench.abstract_benchmark import objdict
 from dacbench.benchmarks.sgd_benchmark import SGD_DEFAULTS, SGDBenchmark
-from dacbench.envs.env_utils import utils
-from dacbench.envs.sgd_new import SGDEnv
+from dacbench.envs.env_utils import sgd_utils
+from dacbench.envs.sgd import SGDEnv
 from dacbench.wrappers import ObservationWrapper
 
 
 class TestSGDEnv(unittest.TestCase):
-    def make_env(self):
+    def make_env(self, epoch=True):
         bench = SGDBenchmark()
+        bench.config.epoch_mode = epoch
         return bench.get_environment()
 
     @staticmethod
@@ -61,7 +62,7 @@ class TestSGDEnv(unittest.TestCase):
         assert env._done is False
 
     def test_step(self):
-        env = self.make_env()
+        env = self.make_env(False)
         state, info = env.reset()
 
         # Test if step method executes without error
@@ -74,8 +75,39 @@ class TestSGDEnv(unittest.TestCase):
         if not env._done:
             assert env.min_validation_loss is not None
 
+        env = self.make_env()
+        state, info = env.reset()
+
+        # Test if step method executes without error in epoch mode
+        state, reward, done, truncated, info = env.step(0.001)
+        assert isinstance(state, dict)
+        assert isinstance(reward, float)
+        assert isinstance(done, bool)
+        assert isinstance(truncated, bool)
+        assert isinstance(info, dict)
+        if not env._done:
+            assert env.min_validation_loss is not None
+
+    def test_multiple_epochs(self):
+        env = self.make_env()
+        _ = env.reset()
+        action = env.action_space.sample()
+        for _ in range(5):
+            _, reward, _, _, _ = env.step(action)
+            assert reward > env.crash_penalty, "Env should not crash"
+
+    def test_torch_hub_loading(self):
+        bench = SGDBenchmark()
+        bench.config.torch_hub_model = ('pytorch/vision:v0.10.0', 'resnet18', False)
+        bench.config.dataset_name = "CIFAR10"
+        env = bench.get_environment()
+        env.reset()
+        assert env.model is not None
+        assert env.model.__class__.__name__ == "ResNet"
+        env.step(0.001)
+
     def test_crash(self):
-        with patch("dacbench.envs.sgd_new.forward_backward") as mock_forward_backward:
+        with patch("dacbench.envs.sgd.forward_backward") as mock_forward_backward:
             mock_forward_backward.return_value = torch.tensor(float("inf"))
             env = ObservationWrapper(self.make_env())
             state, info = env.reset()
@@ -116,35 +148,35 @@ class TestSGDEnv(unittest.TestCase):
         with pytest.raises(AttributeError):
             bench.config.layer_specification = [
                 (
-                    utils.LayerType.CONV2D,
+                    sgd_utils.LayerType.CONV2D,
                     {"in_channels": 1, "out_channels": 16, "kernel_size": 3},
                 ),
-                (utils.LayerType.POOLING, {"kernel_size": 2}),
-                (utils.LayerType.FLATTEN, {}),
+                (sgd_utils.LayerType.POOLING, {"kernel_size": 2}),
+                (sgd_utils.LayerType.FLATTEN, {}),
                 (
-                    utils.LayerType.LINEAR,
+                    sgd_utils.LayerType.LINEAR,
                     {"in_features": 16 * 13 * 13, "out_features": 128},
                 ),
-                (utils.LayerType.LINEAR, {"in_features": 128, "out_features": 10}),
-                (utils.LayerType.LINEAR, {"in_features": 10, "out_features": 5}),
-                (utils.LayerType.UNKOWN, {"in_features": 10, "out_features": 5}),
+                (sgd_utils.LayerType.LINEAR, {"in_features": 128, "out_features": 10}),
+                (sgd_utils.LayerType.LINEAR, {"in_features": 10, "out_features": 5}),
+                (sgd_utils.LayerType.UNKOWN, {"in_features": 10, "out_features": 5}),
             ]
 
     def test_valid_model(self):
         bench = SGDBenchmark()
         bench.config.layer_specification = [
             (
-                utils.LayerType.CONV2D,
+                sgd_utils.LayerType.CONV2D,
                 {"in_channels": 1, "out_channels": 16, "kernel_size": 3},
             ),
-            (utils.LayerType.POOLING, {"kernel_size": 2}),
-            (utils.LayerType.FLATTEN, {}),
+            (sgd_utils.LayerType.POOLING, {"kernel_size": 2}),
+            (sgd_utils.LayerType.FLATTEN, {}),
             (
-                utils.LayerType.LINEAR,
+                sgd_utils.LayerType.LINEAR,
                 {"in_features": 16 * 13 * 13, "out_features": 128},
             ),
-            (utils.LayerType.LINEAR, {"in_features": 128, "out_features": 10}),
-            (utils.LayerType.LINEAR, {"in_features": 10, "out_features": 5}),
+            (sgd_utils.LayerType.LINEAR, {"in_features": 128, "out_features": 10}),
+            (sgd_utils.LayerType.LINEAR, {"in_features": 10, "out_features": 5}),
         ]
 
     def test_close(self):

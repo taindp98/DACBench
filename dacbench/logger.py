@@ -193,8 +193,9 @@ def log2dataframe(
         )
         index_columns = primary_index_columns + additional_columns + [field_id_column]
         dataframe = dataframe.set_index(index_columns)
-        dataframe = dataframe.pivot_table()
+        # dataframe = dataframe.pivot_table()
         dataframe = dataframe.reset_index()
+        print(dataframe.columns)
         dataframe.columns = [a if b == "" else b for a, b in dataframe.columns]
 
     return dataframe.infer_objects()

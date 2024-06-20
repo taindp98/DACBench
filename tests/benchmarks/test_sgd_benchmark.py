@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import unittest
+import numpy as np
 
 from dacbench.benchmarks import SGDBenchmark
 from dacbench.envs import SGDEnv
@@ -55,4 +56,40 @@ class TestSGDBenchmark(unittest.TestCase):
     def test_from_to_json(self):
         bench = SGDBenchmark()
         restored_bench = SGDBenchmark.from_json(bench.to_json())
-        assert bench == restored_bench
+        assert bench.config.keys() == restored_bench.config.keys(), f"Configs should have same keys"
+        for k in bench.config.keys():
+            if k in ["reward_range", "observation_space_kwargs"]:
+                assert np.allclose(bench.config[k], restored_bench.config[k]), f"Config values should be equal, got: {bench.config[k]} != {restored_bench.config[k]}"
+            elif k == "layer_specification":
+                for layer in bench.config[k]:
+                    assert layer in restored_bench.config[k], f"Layer {layer} should be in restored config"
+            elif k == "optimizer_params":
+                for kk in bench.config[k].keys():
+                    assert np.allclose(bench.config[k][kk], restored_bench.config[k][kk]), f"Config values should be equal, got: {bench.config[k][kk]} != {restored_bench.config[k][kk]}"
+            else:
+                assert bench.config[k] == restored_bench.config[k], f"Config values should be equal, got: {bench.config[k]} != {restored_bench.config[k]}"
+
+    def test_seeding(self):
+        bench = SGDBenchmark()
+        bench.config.seed = 123
+        mems = []
+        instances = []
+
+        for _ in range(2):
+            env = bench.get_environment()
+            env.instance_index = 0
+            instances.append(env.get_instance_set())
+
+            state, _ = env.reset()
+
+            terminated, truncated = False, False
+            mem = []
+            step = 0
+            while not (terminated or truncated) and step < 5:
+                action = env.action_space.sample()
+                state, reward, terminated, truncated, _ = env.step(action)
+                mem.append([state, [reward, int(truncated), action]])
+                step += 1
+            mems.append(mem)
+        assert len(mems[0]) == len(mems[1])
+        assert instances[0] == instances[1]

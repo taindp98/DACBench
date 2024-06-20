@@ -5,8 +5,8 @@ import numpy as np
 import torch
 
 from dacbench import AbstractMADACEnv
-from dacbench.envs.env_utils import utils
-from dacbench.envs.env_utils.utils import random_torchvision_loader
+from dacbench.envs.env_utils import sgd_utils
+from dacbench.envs.env_utils.sgd_utils import random_torchvision_loader
 
 
 def _optimizer_action(
@@ -39,17 +39,20 @@ def test(
     nmb_sets = batch_percentage * (len(loader.dataset) / batch_size)
     model.eval()
     test_losses = []
+    test_accuracies = []
     i = 0
 
     with torch.no_grad():
         for data, target in loader:
             d_data, d_target = data.to(device), target.to(device)
             output = model(d_data)
+            _, preds = output.max(dim=1)
             test_losses.append(loss_function(output, d_target))
+            test_accuracies.append(torch.sum(preds == target) / len(target))
             i += 1
             if i >= nmb_sets:
                 break
-    return torch.cat(test_losses)
+    return torch.cat(test_losses), torch.tensor(test_accuracies)
 
 
 def forward_backward(model, loss_function, loader, device="cpu"):
@@ -64,7 +67,25 @@ def forward_backward(model, loss_function, loader, device="cpu"):
     output = model(data)
     loss = loss_function(output, target)
     loss.mean().backward()
-    return loss
+    return loss.mean().detach()
+
+
+def run_epoch(model, loss_function, loader, optimizer, device="cpu"):
+    """Run a single epoch of training for given `model` with `loss_function`."""
+    last_loss = None
+    running_loss = 0
+    model.train()
+    for data, target in loader:
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        print(data.shape, target.shape)
+        output = model(data)
+        loss = loss_function(output, target)
+        loss.mean().backward()
+        optimizer.step()
+        last_loss = loss
+        running_loss += last_loss.mean().item()
+    return last_loss.mean().detach(), running_loss / len(loader)
 
 
 class SGDEnv(AbstractMADACEnv):
@@ -87,6 +108,7 @@ class SGDEnv(AbstractMADACEnv):
     def __init__(self, config):
         """Init env."""
         super().__init__(config)
+        self.epoch_mode = config.get("epoch_mode", True)
         self.device = config.get("device")
 
         self.learning_rate = None
@@ -98,7 +120,8 @@ class SGDEnv(AbstractMADACEnv):
         self.loss_function = config.loss_function(**config.loss_function_kwargs)
         self.dataset_name = config.get("dataset_name")
         self.use_momentum = config.get("use_momentum")
-        self.use_generator = config.get("use_generator")
+        self.use_generator = config.get("model_from_dataset")
+        self.torchub_model = config.get("torch_hub_model", (False, None, False))
 
         # Use default reward function, if no specific function is given
         self.get_reward = config.get("reward_function", self.get_default_reward)
@@ -126,18 +149,26 @@ class SGDEnv(AbstractMADACEnv):
         info = {}
         if isinstance(action, float):
             action = [action]
-
         self.optimizer = _optimizer_action(self.optimizer, action, self.use_momentum)
-        self.optimizer.step()
-        self.optimizer.zero_grad()
 
-        train_args = [
-            self.model,
-            self.loss_function,
-            self.train_loader,
-            self.device,
-        ]
-        self.loss = forward_backward(*train_args)
+        if self.epoch_mode:
+            self.loss, self.average_loss = run_epoch(
+                self.model,
+                self.loss_function,
+                self.train_loader,
+                self.optimizer,
+                self.device,
+            )
+        else:
+            train_args = [
+                self.model,
+                self.loss_function,
+                self.train_loader,
+                self.device,
+            ]
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            self.loss = forward_backward(*train_args)
 
         crashed = (
             not torch.isfinite(self.loss).any()
@@ -145,6 +176,7 @@ class SGDEnv(AbstractMADACEnv):
                 torch.nn.utils.parameters_to_vector(self.model.parameters())
             ).any()
         )
+        self.loss = self.loss.numpy().item()
 
         if crashed:
             self._done = True
@@ -173,9 +205,10 @@ class SGDEnv(AbstractMADACEnv):
             batch_percentage,
             self.device,
         ]
-        validation_loss = test(*val_args)
+        validation_loss, validation_accuracy = test(*val_args)
 
-        self.validation_loss = validation_loss.mean()
+        self.validation_loss = validation_loss.mean().detach().numpy()
+        self.validation_accuracy = validation_accuracy.mean().detach().numpy()
         if (
             self.min_validation_loss is None
             or self.validation_loss <= self.min_validation_loss
@@ -191,7 +224,7 @@ class SGDEnv(AbstractMADACEnv):
                 1.0,
                 self.device,
             ]
-            self.test_losses = test(*val_args)
+            self.test_losses, self.test_accuracies = test(*val_args)
 
         reward = self.get_reward(self)
 
@@ -214,10 +247,16 @@ class SGDEnv(AbstractMADACEnv):
                 self.optimizer_params,
                 self.batch_size,
                 self.crash_penalty,
-            ) = utils.random_instance(rng, self.datasets)
+            ) = sgd_utils.random_instance(rng, self.datasets)
+        elif self.torchub_model[0]:
+            self.model = torch.hub.load(
+                self.torchub_model[0],
+                self.torchub_model[1],
+                pretrained=self.torchub_model[2],
+            )
         else:
             # Load model from config file
-            self.model = utils.create_model(
+            self.model = sgd_utils.create_model(
                 self.config.get("layer_specification"), len(self.datasets[0].classes)
             )
 
@@ -234,7 +273,11 @@ class SGDEnv(AbstractMADACEnv):
         self.test_losses = None
 
         self.validation_loss = 0
+        self.validation_accuracy = 0
         self.min_validation_loss = None
+
+        if self.epoch_mode:
+            self.average_loss = 0
 
         return self.get_state(self), {}
 
@@ -251,7 +294,7 @@ class SGDEnv(AbstractMADACEnv):
             reward = self.test_losses.sum().item() / len(self.test_loader.dataset)
         else:
             reward = 0.0
-        return reward
+        return -reward
 
     def get_default_state(self, _) -> dict:
         """Default state function.
@@ -262,12 +305,20 @@ class SGDEnv(AbstractMADACEnv):
         Returns:
             dict: The current state
         """
-        return {
+        state = {
             "step": self.c_step,
             "loss": self.loss,
             "validation_loss": self.validation_loss,
+            "validation_accuracy": self.validation_accuracy,
             "done": self._done,
         }
+        if self.epoch_mode:
+            state["average_loss"] = self.average_loss
+
+        if self._done and self.test_losses is not None:
+            state["test_losses"] = self.test_losses
+            state["test_accuracies"] = self.test_accuracies
+        return state
 
     def render(self, mode="human"):
         """Render progress."""
