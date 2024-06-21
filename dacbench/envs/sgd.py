@@ -78,7 +78,6 @@ def run_epoch(model, loss_function, loader, optimizer, device="cpu"):
     for data, target in loader:
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
-        print(data.shape, target.shape)
         output = model(data)
         loss = loss_function(output, target)
         loss.mean().backward()

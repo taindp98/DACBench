@@ -62,16 +62,25 @@ SGD_DEFAULTS = objdict(
         "layer_specification": [
             (
                 sgd_utils.LayerType.CONV2D,
-                {"in_channels": 1, "out_channels": 16, "kernel_size": 3},
+                {"in_channels": 1, "out_channels": 32, "kernel_size": 3},
             ),
+            (sgd_utils.LayerType.RELU, {}),
+            (
+                sgd_utils.LayerType.CONV2D,
+                {"in_channels": 32, "out_channels": 64, "kernel_size": 3},
+            ),
+            (sgd_utils.LayerType.RELU, {}),
             (sgd_utils.LayerType.POOLING, {"kernel_size": 2}),
-            (sgd_utils.LayerType.FLATTEN, {}),
+            (sgd_utils.LayerType.DROPOUT, {"p": 0.25}),
+            (sgd_utils.LayerType.FLATTEN, {"start_dim": 1}),
             (
                 sgd_utils.LayerType.LINEAR,
-                {"in_features": 16 * 13 * 13, "out_features": 128},
+                {"in_features": 9216, "out_features": 128},
             ),
+            (sgd_utils.LayerType.RELU, {}),
+            (sgd_utils.LayerType.DROPOUT, {"p": 0.25}),
             (sgd_utils.LayerType.LINEAR, {"in_features": 128, "out_features": 10}),
-            (sgd_utils.LayerType.LINEAR, {"in_features": 10, "out_features": 5}),
+            (sgd_utils.LayerType.LOGSOFTMAX, {"dim": 1}),
         ],
         "torch_hub_model": (False, False, False),
         "optimizer_params": {

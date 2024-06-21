@@ -227,6 +227,9 @@ class LayerType:
     LINEAR = 2
     FLATTEN = 3
     POOLING = 4
+    DROPOUT = 5
+    RELU = 6
+    LOGSOFTMAX = 7
 
 
 # Define a mapping from layer type to the corresponding PyTorch module
@@ -235,6 +238,9 @@ layer_mapping = {
     LayerType.LINEAR: nn.Linear,
     LayerType.FLATTEN: nn.Flatten,
     LayerType.POOLING: nn.MaxPool2d,
+    LayerType.DROPOUT: nn.Dropout,
+    LayerType.RELU: nn.ReLU,
+    LayerType.LOGSOFTMAX: nn.LogSoftmax,
 }
 
 
@@ -250,7 +256,4 @@ def create_model(layer_specification, n_classes) -> nn.Sequential:
         layer_class = layer_mapping[layer_type]
         layer = layer_class(**layer_params)
         layers.append(layer)
-    lst_out_dim = layer_specification[-1][1]["out_features"]
-    layers.append(nn.Linear(lst_out_dim, n_classes))
-    layers.append(nn.LogSoftmax(1))
     return nn.Sequential(*layers)
