@@ -248,11 +248,12 @@ class SGDEnv(AbstractMADACEnv):
                 self.crash_penalty,
             ) = sgd_utils.random_instance(rng, self.datasets)
         elif self.torchub_model[0]:
-            self.model = torch.hub.load(
+            hub_model = torch.hub.load(
                 self.torchub_model[0],
                 self.torchub_model[1],
                 pretrained=self.torchub_model[2],
             )
+            self.model = torch.nn.Sequential(hub_model, torch.nn.Softmax(dim=0))
         else:
             # Load model from config file
             self.model = sgd_utils.create_model(

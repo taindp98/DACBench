@@ -103,7 +103,7 @@ class TestSGDEnv(unittest.TestCase):
         env = bench.get_environment()
         env.reset()
         assert env.model is not None
-        assert env.model.__class__.__name__ == "ResNet"
+        assert env.model.__class__.__name__ == "Sequential"
         env.step(0.001)
 
     def test_crash(self):
