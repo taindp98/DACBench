@@ -131,11 +131,24 @@ class CMAESBenchmark(AbstractBenchmark):
     def read_instance_set(self, test=False):
         """Read path of instances from config into list."""
         if test:
-            path = Path(__file__).resolve().parent / self.config.test_set_path
+            relative_path = Path(__file__).resolve().parent / self.config.test_set_path
+            absolute_path = Path(self.config.test_set_path)
             keyword = "test_set"
         else:
-            path = Path(__file__).resolve().parent / self.config.instance_set_path
+            relative_path = (
+                Path(__file__).resolve().parent / self.config.instance_set_path
+            )
+            absolute_path = Path(self.config.instance_set_path)
             keyword = "instance_set"
+
+        if absolute_path.exists():
+            path = absolute_path
+        elif relative_path.exists():
+            path = relative_path
+        else:
+            raise FileNotFoundError(
+                f"Instance set file not found at {absolute_path} or {relative_path}"
+            )
 
         self.config[keyword] = {}
         with open(path) as fh:
