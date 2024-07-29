@@ -28,7 +28,11 @@ class CMAESEnv(AbstractMADACEnv):
                 if value:
                     self.representation_dict[self._uniform_name(name)] = value
 
-        self.get_reward = config.get("reward_function", self.get_default_reward)
+        if not config.get("normalize_reward", False):
+            self.get_reward = config.get("reward_function", self.get_default_reward)
+        else:
+            self.get_reward = config.get("reward_function", self.get_normalized_reward)
+
         self.get_state = config.get("state_method", self.get_default_state)
 
     def _uniform_name(self, name):
@@ -120,6 +124,20 @@ class CMAESEnv(AbstractMADACEnv):
         return max(
             self.reward_range[0], min(self.reward_range[1], -self.es.parameters.fopt)
         )
+
+    def get_normalized_reward(self, *_):
+        """Normalize each reward within domain bounds.
+
+        Args:
+            _ (_type_): Empty parameter, which can be used when overriding
+
+        Returns:
+            float: The calculated reward
+        """
+        obj_min, obj_max = self.objective.get_target(), 0
+        current_reward = -self.es.parameters.fopt
+        norm_reward = (current_reward - obj_min) / (obj_max - obj_min)
+        return max(self.reward_range[0], min(self.reward_range[1], norm_reward))
 
     def get_default_state(self, *_):
         """Default state function.

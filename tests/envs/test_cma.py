@@ -11,7 +11,7 @@ from gymnasium import spaces
 
 
 class TestCMAEnv(unittest.TestCase):
-    def make_env(self):
+    def make_env(self, normalized_reward=False):
         config = objdict({})
         config.budget = 20
         config.datapath = "."
@@ -20,6 +20,8 @@ class TestCMAEnv(unittest.TestCase):
         config.cutoff = 10
         config.benchmark_info = None
         config.action_space = spaces.MultiDiscrete([2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3])
+        if normalized_reward:
+            config.normalize_reward = True
         config.observation_space = spaces.Box(
             low=-np.inf * np.ones(5), high=np.inf * np.ones(5)
         )
@@ -65,6 +67,29 @@ class TestCMAEnv(unittest.TestCase):
         while not (terminated or truncated):
             rand_dict = {key: 1 for key in param_keys}
             _, _, terminated, truncated, _ = env.step(rand_dict)
+
+    def test_reward_norm(self):
+        env = self.make_env(normalized_reward=True)
+        env.reset()
+        param_keys = (
+            "active",
+            "elitist",
+            "orthogonal",
+            "sequential",
+            "threshold_convergence",
+            "step_size_adaptation",
+            "mirrored",
+            "base_sampler",
+            "weights_option",
+            "local_restart",
+            "bound_correction",
+        )
+        rand_dict = {key: 1 for key in param_keys}
+        state, reward, terminated, truncated, meta = env.step(
+            OrderedDict(rand_dict)
+        ) 
+        assert reward >= -1
+        assert reward <= 0
 
     def test_close(self):
         env = self.make_env()
