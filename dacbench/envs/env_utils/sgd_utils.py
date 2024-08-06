@@ -61,11 +61,6 @@ def random_torchvision_loader(
         dataset_path, train=True, download=True, transform=transform
     )
     train_size = int(len(train_dataset) * fraction_of_dataset)
-    classes = train_dataset.classes
-    train_dataset, _ = torch.utils.data.random_split(
-        train_dataset, [train_size, len(train_dataset) - train_size]
-    )
-    train_dataset.classes = classes
     test = getattr(datasets, name)(dataset_path, train=False, transform=transform)
     train_size = int(len(train_dataset) * train_validation_ratio)
     train_size = train_size - train_size % batch_size
