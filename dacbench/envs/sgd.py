@@ -239,6 +239,7 @@ class SGDEnv(AbstractMADACEnv):
         super().reset_(seed)
 
         # Use generator
+        torch.manual_seed(seed=self.initial_seed)
         rng = np.random.RandomState(self.initial_seed)
         if self.use_generator:
             (
