@@ -254,7 +254,7 @@ class SGDEnv(AbstractMADACEnv):
                 self.torchub_model[1],
                 pretrained=self.torchub_model[2],
             )
-            self.model = torch.nn.Sequential(hub_model, torch.nn.Softmax(dim=0))
+            self.model = torch.nn.Sequential(hub_model, torch.nn.LogSoftmax(dim=0))
         else:
             # Load model from config file
             self.model = sgd_utils.create_model(
