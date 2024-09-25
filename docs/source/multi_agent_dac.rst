@@ -13,8 +13,8 @@ This allows users to specify hyperparameters one by one instead of in a single s
 
 In order to create a Multi-Agent DACBench environment, select either of the following benchmarks:
 
-- :doc:`Sigmoid <benchmark_docs/sigmoid>` (Artificial Benchmark):
-  Sigmoid function approximation in multiple dimensions.
+- :doc:`FunctionApproximation <benchmark_docs/_function_approximation>` (Artificial Benchmark):
+  Function approximation in multiple dimensions.
 - :doc:`ToySGD <benchmark_docs/toy_sgd>` (Artificial Benchmark):
   Controlling the learning rate in gradient descent.
 - :doc:`Geometric <benchmark_docs/geometric>` (Artificial Benchmark):
@@ -25,8 +25,8 @@ To instantiate a benchmark environment, first set the 'multi_agent' key in the c
 
 .. code-block:: python
 
-    from dacbench.benchmarks import SigmoidBenchmark
-    bench = SigmoidBenchmark()
+    from dacbench.benchmarks import FunctionApproximationBenchmark
+    bench = FunctionApproximationBenchmark()
     bench.config["multi_agent"] = True
     env = bench.get_environment()
 

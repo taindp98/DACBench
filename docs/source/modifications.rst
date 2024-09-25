@@ -13,9 +13,9 @@ To load a configuration shared with you, read it using the corresponding benchma
 
 .. code-block:: python
 
-    from dacbench.benchmarks import SigmoidBenchmark
+    from dacbench.benchmarks import FunctionApproximationBenchmark
 
-    bench = SigmoidBenchmark()
+    bench = FunctionApproximationBenchmark()
     bench.read_config_file("path/to/your/config.json")
     modified_benchmark = bench.get_environment()
 
@@ -24,9 +24,9 @@ That way you can directly modify the benchmarks:
 
 .. code-block:: python
 
-    from dacbench.benchmarks import SigmoidBenchmark
+    from dacbench.benchmarks import FunctionApproximationBenchmark
 
-    bench = SigmoidBenchmark()
+    bench = FunctionApproximationBenchmark()
 
     # Increase episode length
     bench.config.cutoff = 20
@@ -43,7 +43,7 @@ To then save this configuration:
 
 In case you want to modify state information, reward function or other complex benchmark attributes,
 be sure to adapt all dependencies in the configuration.
-Benchmarks have methods to do this for common changes like the number of dimensions in Sigmoid.
+Benchmarks have methods to do this for common changes like the number of dimensions in the function approximation benchmark.
 
 If any of your changes pass a function to the configuration,
 please be sure to provide the code for this function along with the configuration itself.

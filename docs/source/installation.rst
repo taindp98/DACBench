@@ -18,31 +18,30 @@ First clone our GitHub repository:
     cd DACBench
     git submodule update --init --recursive
 
-We recommend installing within a virtual environment:
+We recommend installing within a virtual environment, e.g. using uv:
 
 .. code-block:: bash
 
-    conda create -n dacbench python=3.6
-    conda activate dacbench
+    pip install uv
+    uv venv --python 3.10
+    source .venv/bin/activate
 
 Now install DACBench with:
 
 .. code-block:: bash
 
-    pip install -e .
+    make install
 
 To also install all dependecies used in the examples, instead run:
 
 .. code-block:: bash
 
-    pip install -e .[example]
+    make install-dev
 
 You should now have DACBench installed in the base version. This includes on the artificial
 benchmarks, all others have separate installation dependencies. The full list of options is:
 
-- cma - installs the PyCMA step size control benchmark
-- modea - installs the ModEA benchmark
-- modcma - installs the IOHProfiler versions of CMA step size and CMA algorithm control
+- cma - installs the IOHProfiler versions of CMA step size and CMA algorithm control
 - sgd - installs the SGD benchmark
 - theory - installs the theory benchmark
 - all - installs all benchmark dependencies
