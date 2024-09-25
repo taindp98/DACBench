@@ -3,16 +3,16 @@ import importlib
 import warnings
 
 from dacbench.benchmarks.fast_downward_benchmark import FastDownwardBenchmark
-from dacbench.benchmarks.geometric_benchmark import GeometricBenchmark
+from dacbench.benchmarks.function_approximation_benchmark import (
+    FunctionApproximationBenchmark,
+)
 from dacbench.benchmarks.luby_benchmark import LubyBenchmark
-from dacbench.benchmarks.sigmoid_benchmark import SigmoidBenchmark
 from dacbench.benchmarks.toysgd_benchmark import ToySGDBenchmark
 
 __all__ = [
     "LubyBenchmark",
-    "SigmoidBenchmark",
+    "FunctionApproximationBenchmark",
     "ToySGDBenchmark",
-    "GeometricBenchmark",
     "FastDownwardBenchmark",
 ]
 
@@ -28,7 +28,7 @@ else:
         "please follow the installation guide."
     )
 
-sgd_spec = importlib.util.find_spec("backpack")
+sgd_spec = importlib.util.find_spec("torch")
 found = sgd_spec is not None
 if found:
     from dacbench.benchmarks.sgd_benchmark import SGDBenchmark

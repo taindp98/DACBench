@@ -3,6 +3,7 @@
 by David Speck, André Biedenkapp, Frank Hutter, Robert Mattmüller und Marius Lindauer.
 Original environment authors: David Speck, André Biedenkapp.
 """
+
 from __future__ import annotations
 
 import os
@@ -371,7 +372,7 @@ class FastDownwardEnv(AbstractEnv):
 
         with open(self.logpath_out, "a+") as fout, open(self.logpath_err, "a+") as ferr:
             err_output = subprocess.STDOUT if self.logpath_err == "/dev/null" else ferr
-            self.fd = subprocess.Popen(command, stdout=fout, stderr=err_output)  # noqa: S603
+            self.fd = subprocess.Popen(command, stdout=fout, stderr=err_output)
 
         # write down port such that FD can potentially read where to connect to
         if self._port_file_id:

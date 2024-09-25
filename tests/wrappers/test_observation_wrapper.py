@@ -26,7 +26,7 @@ class DummyDictEnv(AbstractEnv):
     def step(self, _):
         return {"one": 1, "two": np.array([1, 2])}, 0, False, False, {}
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         return {}, {}
 
 

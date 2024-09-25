@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 
 from dacbench.benchmarks import SGDBenchmark
-from dacbench.envs import SGDEnv
+from dacbench.envs import SGDEnv, SGDInstance
 
 
 class TestSGDBenchmark(unittest.TestCase):
@@ -39,14 +39,20 @@ class TestSGDBenchmark(unittest.TestCase):
     def test_read_instances(self):
         bench = SGDBenchmark()
         bench.read_instance_set()
-        assert len(bench.config.instance_set.keys()) == 100
+        assert len(bench.config.instance_set.keys()) == 10
         inst = bench.config.instance_set[0]
         bench2 = SGDBenchmark()
         env = bench2.get_environment()
-        assert len(env.instance_set.keys()) == 100
+        assert len(env.instance_set.keys()) == 10
         # [3] instance architecture constructor functionally identical but not comparable
-        assert inst[0] == env.instance_set[0][0]
-        assert inst[1] == env.instance_set[0][1]
+        assert isinstance(env.instance_set[0], SGDInstance)
+        assert inst.optimizer_type == env.instance_set[0].optimizer_type
+        assert inst.dataset_path == env.instance_set[0].dataset_path
+        assert inst.dataset_name == env.instance_set[0].dataset_name
+        assert inst.batch_size == env.instance_set[0].batch_size
+        assert inst.fraction_of_dataset == env.instance_set[0].fraction_of_dataset
+        assert inst.train_validation_ratio == env.instance_set[0].train_validation_ratio
+        assert inst.seed == env.instance_set[0].seed
 
     def test_benchmark_env(self):
         bench = SGDBenchmark()

@@ -3,14 +3,22 @@
 by A. Biedenkapp and H. F. Bozkurt and T. Eimer and F. Hutter and M. Lindauer.
 Original environment authors: André Biedenkapp, H. Furkan Bozkurt.
 """
+
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 import numpy as np
 
 from dacbench import AbstractEnv
 
-# Instance IDEA 1: shift luby seq -> feat is sum of skipped action values
-# Instance IDEA 2: "Wiggle" luby i.e. luby(t + N(0, 0.1)) -> feat is sampled value
+
+@dataclass
+class LubyInstance:
+    """Luby Instance."""
+
+    start_shift: float
+    sticky_shift: float
 
 
 class LubyEnv(AbstractEnv):
@@ -49,7 +57,6 @@ class LubyEnv(AbstractEnv):
         self.action = None
 
         self.get_reward = config.get("reward_function", self.get_default_reward)
-
         self.get_state = config.get("state_method", self.get_default_state)
 
     def step(self, action: int):
@@ -98,8 +105,8 @@ class LubyEnv(AbstractEnv):
         if options is None:
             options = {}
         super().reset_(seed)
-        self._start_shift = self.instance[0]
-        self._sticky_shif = self.instance[1]
+        self._start_shift = self.instance.start_shift
+        self._sticky_shif = self.instance.sticky_shift
         self._r = 0
         self.n_steps = self._mi
 
@@ -157,8 +164,6 @@ class LubyEnv(AbstractEnv):
             Closing confirmation
         """
         return True
-
-    # TODO: this should render!
 
     def render(self, mode: str = "human") -> None:
         """Render env in human mode.

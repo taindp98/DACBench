@@ -1,0 +1,101 @@
+ID,dim,func_name,iid,active,elitist,orthogonal,sequential,threshold_convergence,step_size_adaptation,mirrored,base_sampler,weights_option,local_restart,bound_correction
+0,10,RastriginRotated,8,False,True,False,True,False,lp-xnes,mirrored pairwise,halton,default,IPOP,toroidal
+1,10,Weierstrass,6,False,True,True,True,True,m-xnes,None,sobol,1/2^lambda,BIPOP,COTN
+2,10,StepEllipsoid,3,True,True,False,True,True,lp-xnes,mirrored,halton,1/2^lambda,None,mirror
+3,10,Gallagher21,7,False,False,True,True,True,m-xnes,mirrored pairwise,sobol,equal,BIPOP,saturate
+4,10,DifferentPowers,3,True,False,False,False,True,lp-xnes,mirrored,gaussian,default,IPOP,None
+5,10,Discus,2,False,False,True,True,False,msr,mirrored,gaussian,equal,IPOP,mirror
+6,10,GriewankRosenbrock,2,True,False,True,False,False,psr,None,sobol,default,None,COTN
+7,10,Schwefel,2,True,False,False,False,False,lp-xnes,mirrored,gaussian,1/2^lambda,IPOP,None
+8,10,BentCigar,6,True,False,False,False,True,msr,mirrored pairwise,sobol,default,BIPOP,COTN
+9,10,LinearSlope,3,True,False,False,False,False,psr,mirrored pairwise,halton,equal,None,unif_resample
+10,10,Rosenbrock,9,False,True,True,False,True,xnes,mirrored pairwise,halton,default,None,None
+11,10,Rosenbrock,2,True,False,True,True,False,m-xnes,None,halton,equal,BIPOP,None
+12,10,Rastrigin,5,False,False,False,True,True,xnes,mirrored pairwise,sobol,default,None,unif_resample
+13,10,DifferentPowers,0,True,False,True,True,True,m-xnes,mirrored,sobol,default,None,toroidal
+14,10,LinearSlope,6,True,False,False,False,False,msr,mirrored pairwise,halton,default,IPOP,None
+15,10,Discus,1,True,True,False,True,False,msr,mirrored pairwise,gaussian,default,BIPOP,mirror
+16,10,Discus,9,False,False,True,True,False,m-xnes,None,gaussian,default,IPOP,None
+17,10,RosenbrockRotated,3,False,True,False,True,True,msr,mirrored,gaussian,1/2^lambda,None,None
+18,10,BentCigar,0,True,True,False,False,True,lp-xnes,mirrored,sobol,equal,IPOP,unif_resample
+19,10,Gallagher101,7,False,True,False,True,True,lp-xnes,mirrored,gaussian,1/2^lambda,BIPOP,COTN
+20,10,Weierstrass,9,False,False,False,False,False,msr,mirrored,halton,default,IPOP,saturate
+21,10,BuecheRastrigin,5,True,False,True,True,True,m-xnes,None,gaussian,default,None,None
+22,10,RastriginRotated,5,False,False,True,False,True,msr,None,gaussian,default,IPOP,unif_resample
+23,10,Sphere,3,False,True,True,True,True,xnes,mirrored,sobol,default,None,COTN
+24,10,BuecheRastrigin,4,True,False,False,True,True,msr,mirrored pairwise,sobol,default,IPOP,mirror
+25,10,Ellipsoid,7,False,True,True,False,False,lp-xnes,None,gaussian,equal,BIPOP,unif_resample
+26,10,Schwefel,1,True,False,False,True,True,m-xnes,mirrored pairwise,gaussian,equal,BIPOP,mirror
+27,10,BuecheRastrigin,6,False,True,True,True,True,psr,None,halton,1/2^lambda,IPOP,mirror
+28,10,StepEllipsoid,3,True,False,False,True,False,psr,mirrored pairwise,gaussian,default,IPOP,unif_resample
+29,10,Schaffers10,6,False,False,True,False,True,lp-xnes,None,gaussian,default,BIPOP,unif_resample
+30,10,LunacekBiRastrigin,6,False,True,False,False,True,tpa,mirrored,gaussian,equal,IPOP,COTN
+31,10,BuecheRastrigin,4,True,True,True,True,False,msr,mirrored pairwise,gaussian,equal,IPOP,toroidal
+32,10,DifferentPowers,6,True,False,False,False,False,tpa,None,sobol,default,IPOP,COTN
+33,10,Schaffers10,9,False,False,False,True,False,csa,mirrored pairwise,gaussian,1/2^lambda,IPOP,None
+34,10,RosenbrockRotated,5,False,False,True,True,False,psr,mirrored pairwise,sobol,default,IPOP,COTN
+35,10,StepEllipsoid,2,True,True,True,True,False,msr,None,sobol,equal,BIPOP,None
+36,10,Discus,0,True,False,True,True,False,xnes,mirrored pairwise,halton,1/2^lambda,BIPOP,mirror
+37,10,Weierstrass,7,True,False,False,False,False,psr,None,gaussian,1/2^lambda,BIPOP,unif_resample
+38,10,EllipsoidRotated,6,False,False,True,False,False,lp-xnes,None,halton,1/2^lambda,None,mirror
+39,10,EllipsoidRotated,8,False,False,True,False,True,tpa,None,halton,equal,BIPOP,COTN
+40,10,Gallagher101,3,False,True,True,False,False,m-xnes,None,sobol,default,IPOP,mirror
+41,10,Sphere,5,False,False,False,False,False,psr,mirrored pairwise,gaussian,default,IPOP,unif_resample
+42,10,RastriginRotated,8,True,True,True,False,True,tpa,mirrored pairwise,halton,equal,IPOP,None
+43,10,LunacekBiRastrigin,6,True,True,True,False,False,m-xnes,mirrored pairwise,gaussian,default,IPOP,saturate
+44,10,Gallagher21,6,True,True,False,True,False,csa,None,sobol,equal,BIPOP,toroidal
+45,10,Schaffers1000,7,False,False,True,False,True,psr,mirrored pairwise,halton,default,IPOP,mirror
+46,10,Sphere,9,True,True,True,False,False,xnes,mirrored,gaussian,default,BIPOP,COTN
+47,10,GriewankRosenbrock,2,False,True,True,False,True,lp-xnes,None,sobol,equal,None,saturate
+48,10,Schwefel,0,False,True,False,False,True,psr,mirrored pairwise,gaussian,equal,BIPOP,mirror
+49,10,Gallagher21,1,True,True,False,False,False,lp-xnes,None,gaussian,1/2^lambda,BIPOP,saturate
+50,10,Weierstrass,9,True,False,False,True,True,xnes,mirrored,sobol,equal,None,saturate
+51,10,DifferentPowers,4,True,True,True,False,True,m-xnes,mirrored,sobol,1/2^lambda,BIPOP,toroidal
+52,10,GriewankRosenbrock,2,False,True,False,False,True,m-xnes,mirrored pairwise,sobol,1/2^lambda,BIPOP,None
+53,10,Ellipsoid,8,False,True,False,True,False,tpa,mirrored,gaussian,1/2^lambda,IPOP,COTN
+54,10,EllipsoidRotated,1,True,True,False,False,False,psr,mirrored,gaussian,equal,None,COTN
+55,10,Schaffers1000,9,False,True,True,True,True,lp-xnes,None,gaussian,equal,BIPOP,saturate
+56,10,SharpRidge,1,False,True,True,False,False,psr,mirrored pairwise,halton,equal,IPOP,unif_resample
+57,10,Gallagher21,8,True,False,True,True,True,tpa,None,sobol,1/2^lambda,BIPOP,mirror
+58,10,Gallagher101,1,False,False,False,False,True,psr,mirrored pairwise,halton,default,IPOP,mirror
+59,10,Katsuura,0,True,True,False,False,False,m-xnes,mirrored,gaussian,1/2^lambda,None,toroidal
+60,10,Sphere,6,False,True,False,False,True,xnes,mirrored,gaussian,default,None,saturate
+61,10,Sphere,1,True,True,False,True,True,lp-xnes,None,gaussian,equal,IPOP,None
+62,10,SharpRidge,4,False,False,True,False,True,tpa,mirrored,halton,1/2^lambda,BIPOP,mirror
+63,10,DifferentPowers,0,False,True,False,True,True,psr,mirrored,gaussian,1/2^lambda,None,saturate
+64,10,DifferentPowers,3,True,False,True,True,False,tpa,None,halton,default,IPOP,None
+65,10,StepEllipsoid,1,True,False,True,True,False,csa,mirrored pairwise,sobol,default,None,toroidal
+66,10,Gallagher101,9,False,False,False,False,True,m-xnes,mirrored,gaussian,equal,IPOP,mirror
+67,10,LunacekBiRastrigin,5,True,True,False,True,False,tpa,None,gaussian,default,None,toroidal
+68,10,Rastrigin,6,False,False,True,False,True,csa,mirrored pairwise,gaussian,1/2^lambda,BIPOP,None
+69,10,Gallagher101,2,True,True,False,False,True,tpa,mirrored pairwise,gaussian,default,None,mirror
+70,10,BentCigar,8,True,True,False,False,True,csa,mirrored,sobol,default,BIPOP,COTN
+71,10,StepEllipsoid,0,True,True,True,True,False,xnes,mirrored pairwise,halton,1/2^lambda,None,mirror
+72,10,RastriginRotated,7,False,True,False,False,True,m-xnes,None,halton,default,IPOP,unif_resample
+73,10,Gallagher101,4,True,False,True,False,False,csa,mirrored pairwise,halton,default,IPOP,None
+74,10,LinearSlope,2,True,True,False,True,True,lp-xnes,None,halton,default,None,unif_resample
+75,10,Schwefel,3,True,True,True,True,False,lp-xnes,mirrored pairwise,halton,1/2^lambda,IPOP,mirror
+76,10,BentCigar,1,True,True,True,False,True,xnes,None,sobol,1/2^lambda,BIPOP,toroidal
+77,10,StepEllipsoid,8,True,False,False,False,False,msr,mirrored,sobol,equal,None,None
+78,10,Gallagher101,2,True,False,False,True,True,csa,mirrored,sobol,1/2^lambda,BIPOP,saturate
+79,10,Discus,5,True,False,True,False,False,msr,mirrored pairwise,halton,1/2^lambda,None,saturate
+80,10,StepEllipsoid,4,False,False,True,False,True,psr,None,sobol,equal,None,COTN
+81,10,Gallagher21,6,False,False,True,True,False,csa,mirrored pairwise,gaussian,equal,None,COTN
+82,10,Weierstrass,0,False,True,True,True,True,xnes,mirrored,gaussian,equal,IPOP,toroidal
+83,10,SharpRidge,3,False,True,False,False,True,msr,mirrored,gaussian,default,BIPOP,COTN
+84,10,Ellipsoid,7,False,False,True,True,False,xnes,None,halton,default,IPOP,COTN
+85,10,Schaffers1000,1,False,True,False,True,True,msr,None,halton,equal,BIPOP,unif_resample
+86,10,Gallagher21,5,True,True,True,True,True,lp-xnes,mirrored,sobol,equal,IPOP,unif_resample
+87,10,DifferentPowers,7,True,False,False,False,True,lp-xnes,mirrored,gaussian,equal,IPOP,None
+88,10,Weierstrass,0,True,True,True,True,False,tpa,mirrored,gaussian,1/2^lambda,BIPOP,toroidal
+89,10,Weierstrass,0,True,False,False,False,False,psr,None,sobol,default,IPOP,COTN
+90,10,Discus,8,False,True,True,False,False,csa,None,sobol,default,IPOP,None
+91,10,BentCigar,6,False,False,True,True,True,tpa,None,halton,default,None,toroidal
+92,10,Ellipsoid,9,False,False,True,False,True,psr,mirrored,gaussian,equal,IPOP,unif_resample
+93,10,Schaffers10,3,False,False,False,True,True,xnes,mirrored pairwise,halton,equal,IPOP,mirror
+94,10,Discus,9,False,False,True,False,False,m-xnes,mirrored,halton,1/2^lambda,IPOP,COTN
+95,10,Gallagher101,1,False,True,True,False,True,xnes,mirrored pairwise,sobol,1/2^lambda,BIPOP,toroidal
+96,10,BentCigar,1,True,True,True,False,True,lp-xnes,None,gaussian,1/2^lambda,IPOP,mirror
+97,10,SharpRidge,8,True,True,True,True,False,m-xnes,mirrored,gaussian,equal,None,mirror
+98,10,Gallagher101,7,False,True,False,False,False,m-xnes,mirrored pairwise,sobol,1/2^lambda,BIPOP,saturate
+99,10,Gallagher101,3,False,False,False,True,True,lp-xnes,mirrored pairwise,halton,1/2^lambda,IPOP,unif_resample

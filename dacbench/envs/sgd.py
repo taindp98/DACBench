@@ -1,5 +1,8 @@
 """SGD environment."""
+
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 import numpy as np
 import torch
@@ -7,17 +10,6 @@ import torch
 from dacbench import AbstractMADACEnv
 from dacbench.envs.env_utils import sgd_utils
 from dacbench.envs.env_utils.sgd_utils import random_torchvision_loader
-
-
-def _optimizer_action(
-    optimizer: torch.optim.Optimizer, action: float, use_momentum: bool
-) -> None:
-    for g in optimizer.param_groups:
-        g["lr"] = action[0]
-        if use_momentum:
-            print("Momentum")
-            g["betas"] = (action[1], 0.999)
-    return optimizer
 
 
 def test(
@@ -87,6 +79,21 @@ def run_epoch(model, loss_function, loader, optimizer, device="cpu"):
     return last_loss.mean().detach(), running_loss / len(loader)
 
 
+@dataclass
+class SGDInstance:
+    """SGD Instance."""
+
+    model: torch.nn.Module
+    optimizer_type: torch.optim.Optimizer
+    optimizer_params: dict
+    dataset_path: str
+    dataset_name: str
+    batch_size: int
+    fraction_of_dataset: float
+    train_validation_ratio: float
+    seed: int
+
+
 class SGDEnv(AbstractMADACEnv):
     """The SGD DAC Environment implements the problem of dynamically configuring
     the learning rate hyperparameter of a neural network optimizer
@@ -112,33 +119,15 @@ class SGDEnv(AbstractMADACEnv):
         self.device = config.get("device")
 
         self.learning_rate = None
-        self.optimizer_type = torch.optim.AdamW
-        self.optimizer_params = config.get("optimizer_params")
-        self.batch_size = config.get("training_batch_size")
-        self.model = config.get("model")
         self.crash_penalty = config.get("crash_penalty")
         self.loss_function = config.loss_function(**config.loss_function_kwargs)
-        self.dataset_name = config.get("dataset_name")
-        self.use_momentum = config.get("use_momentum")
-        self.use_generator = config.get("model_from_dataset")
-        self.torchub_model = config.get("torch_hub_model", (False, None, False))
+        self.use_generator = config.get("use_instance_generator")
 
         # Use default reward function, if no specific function is given
         self.get_reward = config.get("reward_function", self.get_default_reward)
 
         # Use default state function, if no specific function is given
         self.get_state = config.get("state_method", self.get_default_state)
-
-        # Get loaders for instance
-        self.datasets, loaders = random_torchvision_loader(
-            config.get("seed"),
-            config.get("instance_set_path"),
-            self.dataset_name,
-            self.batch_size,
-            config.get("fraction_of_dataset"),
-            config.get("train_validation_ratio"),
-        )
-        self.train_loader, self.validation_loader, self.test_loader = loaders
 
     def step(self, action: float):
         """Update the parameters of the neural network using the given learning rate lr,
@@ -149,7 +138,10 @@ class SGDEnv(AbstractMADACEnv):
         info = {}
         if isinstance(action, float):
             action = [action]
-        self.optimizer = _optimizer_action(self.optimizer, action, self.use_momentum)
+        for g in self.optimizer.param_groups:
+            g["lr"] = action[0]
+            if len(action) > 1:
+                g["betas"] = (action[1], 0.999)
 
         if self.epoch_mode:
             self.loss, self.average_loss = run_epoch(
@@ -201,7 +193,7 @@ class SGDEnv(AbstractMADACEnv):
             self.model,
             self.loss_function,
             self.validation_loader,
-            self.batch_size,
+            self.instance.batch_size,
             batch_percentage,
             self.device,
         ]
@@ -220,7 +212,7 @@ class SGDEnv(AbstractMADACEnv):
                 self.model,
                 self.loss_function,
                 self.test_loader,
-                self.batch_size,
+                self.instance.batch_size,
                 1.0,
                 self.device,
             ]
@@ -239,36 +231,38 @@ class SGDEnv(AbstractMADACEnv):
             options = {}
         super().reset_(seed)
 
-        # Use generator
         rng = np.random.RandomState(self.initial_seed)
+
+        # Get loaders for instance
+        self.datasets, loaders = random_torchvision_loader(
+            self.instance.seed,
+            self.instance.dataset_path,
+            self.instance.dataset_name,
+            self.instance.batch_size,
+            self.instance.fraction_of_dataset,
+            self.instance.train_validation_ratio,
+        )
+        self.train_loader, self.validation_loader, self.test_loader = loaders
+
         if self.use_generator:
             (
                 self.model,
                 self.optimizer_params,
-                self.batch_size,
+                self.instance.batch_size,
                 self.crash_penalty,
             ) = sgd_utils.random_instance(rng, self.datasets)
-        elif self.torchub_model[0]:
-            hub_model = torch.hub.load(
-                self.torchub_model[0],
-                self.torchub_model[1],
-                pretrained=self.torchub_model[2],
-            )
-            self.model = torch.nn.Sequential(hub_model, torch.nn.LogSoftmax(dim=0))
         else:
-            # Load model from config file
-            self.model = sgd_utils.create_model(
-                self.config.get("layer_specification"), len(self.datasets[0].classes)
-            )
+            self.model = self.instance.model()
+            self.optimizer_params = self.instance.optimizer_params
 
         self.learning_rate = None
-        self.optimizer_type = torch.optim.AdamW
+        self.optimizer_type = self.instance.optimizer_type
         self.info = {}
         self._done = False
 
         self.model.to(self.device)
         self.optimizer: torch.optim.Optimizer = torch.optim.AdamW(
-            **self.optimizer_params, params=self.model.parameters()
+            **self.instance.optimizer_params, params=self.model.parameters()
         )
         self.loss = 0
         self.test_losses = None

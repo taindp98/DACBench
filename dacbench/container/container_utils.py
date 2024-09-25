@@ -1,4 +1,5 @@
 """Container utils."""
+
 from __future__ import annotations
 
 import enum
@@ -207,6 +208,6 @@ def wait_for_port(port, host="localhost", timeout=5.0):
             time.sleep(0.01)
             if time.perf_counter() - start_time >= timeout:
                 raise TimeoutError(
-                    "Waited too long for the port {} on host {} to start accepting "
-                    "connections.".format(port, host)
+                    f"""Waited too long for the port {port} on
+                    host {host} to start accepting connections."""
                 ) from ex

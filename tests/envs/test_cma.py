@@ -6,7 +6,8 @@ from collections import OrderedDict
 import numpy as np
 from dacbench import AbstractEnv
 from dacbench.abstract_benchmark import objdict
-from dacbench.envs import CMAESEnv
+from dacbench.envs import CMAESEnv, CMAESInstance
+from dacbench.envs.env_utils.toy_functions import IOHFunction
 from gymnasium import spaces
 
 
@@ -16,7 +17,9 @@ class TestCMAEnv(unittest.TestCase):
         config.budget = 20
         config.datapath = "."
         config.threshold = 1e-8
-        config.instance_set = {2: [10, 12, 0, np.ones(11)]}
+        config.instance_set = {2: CMAESInstance(IOHFunction(function_name="Sphere", dim=10, iid=1),
+                dim=10, fid=12, iid=1, active=True, elitist=True, orthogonal=True, sequential=True, threshold_convergence=True,
+                step_size_adaptation="csa", mirrored="None", base_sampler="sobol", weights_option="default", local_restart="None", bound_correction="None")}
         config.cutoff = 10
         config.benchmark_info = None
         config.action_space = spaces.MultiDiscrete([2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3])

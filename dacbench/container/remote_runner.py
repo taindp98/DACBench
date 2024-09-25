@@ -1,4 +1,5 @@
 """This is strongly guided and partially copy from:https://github.com/automl/HPOBench/blob/master/hpobench/container/client_abstract_benchmark.py."""
+
 from __future__ import annotations
 
 import argparse
@@ -189,7 +190,7 @@ class RemoteRunner:
 
         # todo add mechanism to to retry if failing
         self.daemon_process = subprocess.Popen(
-            [  # noqa: S603, S607
+            [
                 "singularity",
                 "run",
                 "-e",

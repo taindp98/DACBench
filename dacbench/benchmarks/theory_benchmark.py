@@ -102,7 +102,7 @@ class TheoryBenchmark(AbstractBenchmark):
                 upper=self.config["max_action"],
             )
 
-        cfg_space.add_hyperparameter(action)
+        cfg_space.add(action)
         self.config["config_space"] = cfg_space
 
         # create observation space
@@ -170,7 +170,8 @@ class TheoryBenchmark(AbstractBenchmark):
                 / self.config.instance_set_path
             )
 
-        self.config["instance_set"] = pd.read_csv(path, index_col=0).to_dict("id")
+        instance_df = pd.read_csv(path, index_col=0)
+        self.config["instance_set"] = instance_df.to_dict(orient="index")
 
         assert len(self.config["instance_set"].items()) > 0, "ERROR: empty instance set"
         assert (

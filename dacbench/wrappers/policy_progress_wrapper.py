@@ -1,4 +1,5 @@
 """Wrapper for process tracking."""
+
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
@@ -91,6 +92,12 @@ class PolicyProgressWrapper(Wrapper):
 
         """
         state, reward, terminated, truncated, info = self.env.step(action)
+        if isinstance(action, dict):
+            action = list(action.values())
+            for i in range(len(action)):
+                if isinstance(action[i], list | np.ndarray):
+                    action[i] = action[i][0]
+        print(action)
         self.episode.append(action)
         if terminated or truncated:
             optimal = self.compute_optimal(self.env.instance)

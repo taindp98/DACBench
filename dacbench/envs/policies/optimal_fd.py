@@ -1,4 +1,5 @@
 """Optimal policy for Fast Downward."""
+
 from __future__ import annotations
 
 import json

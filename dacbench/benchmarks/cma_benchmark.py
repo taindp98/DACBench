@@ -1,16 +1,17 @@
 """CMA ES Benchmark."""
+
 from __future__ import annotations
 
-import itertools
 from pathlib import Path
 
 import ConfigSpace as CS  # noqa: N817
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
-from modcma import Parameters
+import pandas as pd
 
 from dacbench.abstract_benchmark import AbstractBenchmark, objdict
-from dacbench.envs import CMAESEnv
+from dacbench.envs import CMAESEnv, CMAESInstance
+from dacbench.envs.env_utils.toy_functions import IOHFunction
 
 DEFAULT_CFG_SPACE = CS.ConfigurationSpace()
 ACTIVE = CSH.CategoricalHyperparameter(name="0_active", choices=[True, False])
@@ -41,18 +42,44 @@ BOUND_CORRECTION = CSH.CategoricalHyperparameter(
     choices=["None", "saturate", "unif_resample", "COTN", "toroidal", "mirror"],
 )
 STEP_SIZE = CS.Float(name="92_step_size", bounds=(0.0, 10.0))
-DEFAULT_CFG_SPACE.add_hyperparameter(ACTIVE)
-DEFAULT_CFG_SPACE.add_hyperparameter(ELITIST)
-DEFAULT_CFG_SPACE.add_hyperparameter(ORTHOGONAL)
-DEFAULT_CFG_SPACE.add_hyperparameter(SEQUENTIAL)
-DEFAULT_CFG_SPACE.add_hyperparameter(THRESHOLD_CONVERGENCE)
-DEFAULT_CFG_SPACE.add_hyperparameter(STEP_SIZE_ADAPTATION)
-DEFAULT_CFG_SPACE.add_hyperparameter(MIRRORED)
-DEFAULT_CFG_SPACE.add_hyperparameter(BASE_SAMPLER)
-DEFAULT_CFG_SPACE.add_hyperparameter(WEIGHTS_OPTION)
-DEFAULT_CFG_SPACE.add_hyperparameter(LOCAL_RESTART)
-DEFAULT_CFG_SPACE.add_hyperparameter(BOUND_CORRECTION)
-DEFAULT_CFG_SPACE.add_hyperparameter(STEP_SIZE)
+DEFAULT_CFG_SPACE.add(ACTIVE)
+DEFAULT_CFG_SPACE.add(ELITIST)
+DEFAULT_CFG_SPACE.add(ORTHOGONAL)
+DEFAULT_CFG_SPACE.add(SEQUENTIAL)
+DEFAULT_CFG_SPACE.add(THRESHOLD_CONVERGENCE)
+DEFAULT_CFG_SPACE.add(STEP_SIZE_ADAPTATION)
+DEFAULT_CFG_SPACE.add(MIRRORED)
+DEFAULT_CFG_SPACE.add(BASE_SAMPLER)
+DEFAULT_CFG_SPACE.add(WEIGHTS_OPTION)
+DEFAULT_CFG_SPACE.add(LOCAL_RESTART)
+DEFAULT_CFG_SPACE.add(BOUND_CORRECTION)
+DEFAULT_CFG_SPACE.add(STEP_SIZE)
+
+FUNCTION_NAMES = {
+    "BentCigar": 1,
+    "BuecheRastrigin": 2,
+    "DifferentPowers": 3,
+    "Discus": 4,
+    "Ellipsoid": 5,
+    "EllipsoidRotated": 6,
+    "Gallagher101": 7,
+    "Gallagher21": 8,
+    "GriewankRosenbrock": 9,
+    "Katsuura": 10,
+    "LinearSlope": 11,
+    "LunacekBiRastrigin": 12,
+    "Rastrigin": 13,
+    "RastriginRotated": 14,
+    "Rosenbrock": 15,
+    "RosenbrockRotated": 16,
+    "Schaffers10": 17,
+    "Schaffers1000": 18,
+    "Schwefel": 19,
+    "SharpRidge": 20,
+    "Sphere": 21,
+    "StepEllipsoid": 22,
+    "Weierstrass": 23,
+}
 
 INFO = {
     "identifier": "ModCMA",
@@ -71,13 +98,6 @@ INFO = {
 CMAES_DEFAULTS = objdict(
     {
         "config_space": DEFAULT_CFG_SPACE,
-        "action_space_class": "MultiDiscrete",
-        "action_space_args": [
-            [
-                len(getattr(getattr(Parameters, m), "options", [False, True]))
-                for m in Parameters.__modules__
-            ]
-        ],
         "observation_space_class": "Box",
         "observation_space_args": [-np.inf * np.ones(5), np.inf * np.ones(5)],
         "observation_space_type": np.float32,
@@ -86,8 +106,8 @@ CMAES_DEFAULTS = objdict(
         "cutoff": 1e6,
         "seed": 0,
         "multi_agent": False,
-        "instance_set_path": "../instance_sets/modea/modea_train.csv",
-        "test_set_path": "../instance_sets/modea/modea_train.csv",
+        "instance_set_path": "../instance_sets/cma/cma_bbob_dim10_train.csv",
+        "test_set_path": "../instance_sets/cma/cma_bbob_dim10_test.csv",
         "benchmark_info": INFO,
     }
 )
@@ -133,30 +153,54 @@ class CMAESBenchmark(AbstractBenchmark):
         if test:
             relative_path = Path(__file__).resolve().parent / self.config.test_set_path
             absolute_path = Path(self.config.test_set_path)
+            dacbench_path = (
+                Path(__file__).resolve().parent
+                / "../instance_sets/cma"
+                / self.config.test_set_path
+            )
             keyword = "test_set"
         else:
             relative_path = (
                 Path(__file__).resolve().parent / self.config.instance_set_path
             )
             absolute_path = Path(self.config.instance_set_path)
+            (
+                Path(__file__).resolve().parent
+                / "../instance_sets/toysgd"
+                / self.config.instance_set_path
+            )
             keyword = "instance_set"
 
         if absolute_path.exists():
             path = absolute_path
         elif relative_path.exists():
             path = relative_path
+        elif dacbench_path.is_file():
+            path = dacbench_path
         else:
             raise FileNotFoundError(
                 f"Instance set file not found at {absolute_path} or {relative_path}"
             )
 
         self.config[keyword] = {}
-        with open(path) as fh:
-            for line in itertools.islice(fh, 1, None):
-                _id, dim, fid, iid, *representation = line.strip().split(",")
-                self.config[keyword][int(_id)] = [
-                    int(dim),
-                    int(fid),
-                    int(iid),
-                    list(map(int, representation)),
-                ]
+        instance_csv = pd.read_csv(path)
+        for i, row in instance_csv.iterrows():
+            self.config[keyword][i] = CMAESInstance(
+                IOHFunction(
+                    function_name=row["func_name"], dim=row["dim"], iid=row["iid"]
+                ),
+                dim=row["dim"],
+                fid=FUNCTION_NAMES[row["func_name"]],
+                iid=row["iid"],
+                active=row["active"],
+                elitist=row["elitist"],
+                orthogonal=row["orthogonal"],
+                sequential=row["sequential"],
+                threshold_convergence=row["threshold_convergence"],
+                step_size_adaptation=row["step_size_adaptation"],
+                mirrored=row["mirrored"],
+                base_sampler=row["base_sampler"],
+                weights_option=row["weights_option"],
+                local_restart=row["local_restart"],
+                bound_correction=row["bound_correction"],
+            )

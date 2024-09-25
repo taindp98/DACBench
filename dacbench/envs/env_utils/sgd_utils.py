@@ -1,5 +1,9 @@
 """Utils for the environments."""
+
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -218,13 +222,13 @@ def random_architecture(
 class LayerType:
     """Enum for supported torch layers."""
 
-    CONV2D = 1
-    LINEAR = 2
-    FLATTEN = 3
-    POOLING = 4
-    DROPOUT = 5
-    RELU = 6
-    LOGSOFTMAX = 7
+    CONV2D = "CONV2D"
+    LINEAR = "LINEAR"
+    FLATTEN = "FLATTEN"
+    POOLING = "POOLING"
+    DROPOUT = "DROPOUT"
+    RELU = "RELU"
+    LOGSOFTMAX = "LOGSOFTMAX"
 
 
 # Define a mapping from layer type to the corresponding PyTorch module
@@ -240,15 +244,56 @@ layer_mapping = {
 
 
 # Define a function to create the model based on the layer specification
-def create_model(layer_specification, n_classes) -> nn.Sequential:
+def create_model_from_layer_description(model_description_file) -> nn.Sequential:
     """Creates a torch model using the given layer_specification.
 
     Returns:
         nn.Sequential: The pytorch model
     """
-    layers = []
-    for layer_type, layer_params in layer_specification:
-        layer_class = layer_mapping[layer_type]
-        layer = layer_class(**layer_params)
-        layers.append(layer)
-    return nn.Sequential(*layers)
+    if Path(model_description_file).exists():
+        with open(model_description_file) as f:
+            layer_specification = json.load(f)
+    elif Path("dacbench/instance_sets/sgd/" + model_description_file).exists():
+        with open("dacbench/instance_sets/sgd/" + model_description_file) as f:
+            layer_specification = json.load(f)
+    else:
+        raise FileNotFoundError(f"File {model_description_file} not found.")
+
+    def make_model():
+        layers = []
+        for layer_type, layer_params in layer_specification:
+            layer_class = layer_mapping[layer_type]
+            layer = layer_class(**layer_params)
+            layers.append(layer)
+        return nn.Sequential(*layers)
+
+    return make_model
+
+
+def load_model_from_torchhub(
+    model_repo: str, model_name: str, pretrained: bool, local: bool | str = False
+):
+    """Loads a model from torchhub."""
+
+    def make_model():
+        local_kwargs = {}
+        model_loc = model_repo
+        if local:
+            local_kwargs["source"] = "local"
+            model_loc = local
+        hub_model = torch.hub.load(
+            model_loc, model_name, pretrained=bool(pretrained), **local_kwargs
+        )
+        return torch.nn.Sequential(hub_model, torch.nn.LogSoftmax(dim=0))
+
+    return make_model
+
+
+def get_model_constructor(model_type, model_kwargs, local=False):
+    """Get the model constructor based on the model type."""
+    if model_type == "from_file":
+        return create_model_from_layer_description(*model_kwargs)
+    elif model_type == "from_torchhub":  # noqa: RET505
+        return load_model_from_torchhub(*model_kwargs)
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")

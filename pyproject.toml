@@ -1,9 +1,79 @@
 [build-system]
-requires = [
-    "setuptools >= 45.0.0",
-    "setuptools_scm >= 2.0.0, <3",
-]
+requires = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "DACBench"
+version = "0.2.1"
+description = "Dynamic Algorithm Configuration Benchmark"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["DAC", "Dynamic Algorithm Configuration", "HPO"]
+authors = [
+    { name = "Theresa Eimer", email = "t.eimer@ai.uni-hannover.de" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: English",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development"
+]
+requires-python = ">=3.10"
+dependencies = [
+  "gymnasium==0.29.1",
+  "numpy==1.26.4",
+  "pandas==2.2.3",
+  "matplotlib==3.9.2",
+  "seaborn==0.13.2",
+  "configspace==1.2.0",
+  "scikit-learn==1.5.2",
+  "scipy==1.14.1", 
+  "jupyter==1.0.0",
+  "Pyro4==4.82"]
+
+[project.urls]
+Homepage = "https://github.com/automl/DACBench"
+Documentation = "https://automl.github.io/DACBench/main/"
+Repository = "https://github.com/automl/DACBench"
+Issues = "https://github.com/automl/DACBench/issues"
+Changelog = "https://github.com/automl/DACBench/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "coverage[toml]==7.6.1",
+    "pre-commit==3.8.0",
+    "ruff==0.6.7"
+]
+example = [
+    "tabulate==0.9.0",
+]
+docs = [
+    "automl-sphinx-theme==0.2.0"
+]
+all = [
+  "ioh==0.3.17", 
+  "modcma==1.0.8",
+  "torchvision==0.19.1",
+  "torch==2.4.1",
+  "uuid"
+]
+
+[tool.extras]
+cma = ["ioh==0.3.17", 
+  "modcma==1.0.8"]
+sgd = [
+    "torchvision==0.19.1",
+    "torch==2.4.1",
+]
+theory = ["uuid"]
 
 [tool.ruff]
 target-version = "py310"
@@ -101,6 +171,8 @@ lint.ignore = [
   "INP001",
   "PLR0911",
   "PLW2901",
+  "S603",
+  "S607"
 ]
 
 exclude = [
@@ -127,6 +199,7 @@ exclude = [
   "*envs/downward/*",
   "tests",
   "dacbench/challenge_benchmarks",
+  "*.ipynb"
 ]
 
 # Exclude a variety of commonly ignored directories.

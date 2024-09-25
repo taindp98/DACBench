@@ -21,5 +21,6 @@ test/*.json
 .vscode/
 
 #datasets for sgd
-*MNIST/raw/*
-*cifar-10-batches-py/*
+*MNIST/raw*
+*raw*
+*cifar-10-batches-py*

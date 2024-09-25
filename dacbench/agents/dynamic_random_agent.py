@@ -1,4 +1,5 @@
 """Dynamic Random Agent."""
+
 from __future__ import annotations
 
 from gymnasium import spaces

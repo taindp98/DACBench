@@ -5,6 +5,7 @@ from unittest import mock
 
 import numpy as np
 from dacbench.benchmarks import LubyBenchmark
+from dacbench.envs import LubyInstance
 from dacbench.wrappers import PerformanceTrackingWrapper
 
 
@@ -26,7 +27,7 @@ class TestPerformanceWrapper(unittest.TestCase):
 
     def test_step(self):
         bench = LubyBenchmark()
-        bench.config.instance_set = {0: [0, 0], 1: [1, 1], 2: [3, 4], 3: [5, 6]}
+        bench.config.instance_set = {0: LubyInstance(0, 0), 1: LubyInstance(1,1), 2: LubyInstance(3,4), 3: LubyInstance(5,6)}
         env = bench.get_environment()
         wrapped = PerformanceTrackingWrapper(env, 2)
 

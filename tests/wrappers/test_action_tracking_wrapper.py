@@ -45,39 +45,36 @@ class TestActionTrackingWrapper(unittest.TestCase):
 
         expected_actions = pd.DataFrame(
             {
-                f"action_{next(iter(action.keys()))}": [
+                f"{next(iter(action.keys()))}": [
                     action[next(iter(action.keys()))]
                 ]
                 * 10,
-                f"action_{list(action.keys())[1]}": [action[list(action.keys())[1]]]
+                f"{list(action.keys())[1]}": [action[list(action.keys())[1]]]
                 * 10,
-                f"action_{list(action.keys())[2]}": [action[list(action.keys())[2]]]
+                f"{list(action.keys())[2]}": [action[list(action.keys())[2]]]
                 * 10,
-                f"action_{list(action.keys())[3]}": [action[list(action.keys())[3]]]
+                f"{list(action.keys())[3]}": [action[list(action.keys())[3]]]
                 * 10,
-                f"action_{list(action.keys())[4]}": [action[list(action.keys())[4]]]
+                f"{list(action.keys())[4]}": [action[list(action.keys())[4]]]
                 * 10,
-                f"action_{list(action.keys())[5]}": [action[list(action.keys())[5]]]
+                f"{list(action.keys())[5]}": [action[list(action.keys())[5]]]
                 * 10,
-                f"action_{list(action.keys())[6]}": [action[list(action.keys())[6]]]
+                f"{list(action.keys())[6]}": [action[list(action.keys())[6]]]
                 * 10,
-                f"action_{list(action.keys())[7]}": [action[list(action.keys())[7]]]
+                f"{list(action.keys())[7]}": [action[list(action.keys())[7]]]
                 * 10,
-                f"action_{list(action.keys())[8]}": [action[list(action.keys())[8]]]
+                f"{list(action.keys())[8]}": [action[list(action.keys())[8]]]
                 * 10,
-                f"action_{list(action.keys())[9]}": [action[list(action.keys())[9]]]
+                f"{list(action.keys())[9]}": [action[list(action.keys())[9]]]
                 * 10,
-                f"action_{list(action.keys())[10]}": [action[list(action.keys())[10]]]
+                f"{list(action.keys())[10]}": [action[list(action.keys())[10]]]
                 * 10,
-                f"action_{list(action.keys())[11]}_0": [action[list(action.keys())[11]]]
+                f"{list(action.keys())[11]}_0": [action[list(action.keys())[11]]]
                 * 10,
             }
         )
-        print(dataframe.columns)
-        print(expected_actions.columns)
+        
         for column in expected_actions.columns:
-            # todo: seems to be an bug here. Every so ofter the last action is missing.
-            # Double checked not a logging problem. Could be a seeding issue
             self.assertListEqual(
                 dataframe[column].to_list()[:10],
                 expected_actions[column].to_list()[:10],

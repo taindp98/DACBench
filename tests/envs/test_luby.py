@@ -6,13 +6,13 @@ import numpy as np
 import pytest
 from dacbench import AbstractEnv
 from dacbench.benchmarks.luby_benchmark import LUBY_DEFAULTS
-from dacbench.envs import LubyEnv
+from dacbench.envs import LubyEnv, LubyInstance
 
 
 class TestLubyEnv(unittest.TestCase):
     def make_env(self):
         config = LUBY_DEFAULTS
-        config["instance_set"] = {0: [1, 1]}
+        config["instance_set"] = {0: LubyInstance(1, 1)}
         return LubyEnv(config)
 
     def test_setup(self):
@@ -51,7 +51,7 @@ class TestLubyEnv(unittest.TestCase):
         assert len(meta.keys()) == 0
 
         config = LUBY_DEFAULTS
-        config["instance_set"] = {1: [-4, -4]}
+        config["instance_set"] = {1: LubyInstance(-4, -4)}
         env = LubyEnv(config)
         env.reset()
         state, reward, terminated, truncated, meta = env.step(1)

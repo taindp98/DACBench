@@ -19,7 +19,7 @@ HEURISTICS = [
 
 DEFAULT_CFG_SPACE = CS.ConfigurationSpace()
 HEURISTIC = CSH.CategoricalHyperparameter(name="heuristic", choices=["toy1", "toy2"])
-DEFAULT_CFG_SPACE.add_hyperparameter(HEURISTIC)
+DEFAULT_CFG_SPACE.add(HEURISTIC)
 
 INFO = {
     "identifier": "FastDownward",

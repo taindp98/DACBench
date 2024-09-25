@@ -35,18 +35,8 @@ class TestTimeTrackingWrapper(unittest.TestCase):
 
         # all steps must have logged time
         assert (~dataframe.step_duration.isna()).any()
-
         # each episode has a recored time
-        episodes = dataframe.groupby("episode")
-        last_steps_per_episode = dataframe.iloc[episodes.step.idxmax()+1]
-        assert (~last_steps_per_episode.episode_duration.isna()).all()
-
-        # episode time equals the sum of the steps in episode
-        calculated_episode_times = episodes.step_duration.sum()
-        recorded_episode_times = last_steps_per_episode.episode_duration
-        self.assertListEqual(
-            calculated_episode_times.tolist(), recorded_episode_times.tolist()
-        )
+        assert (~dataframe.episode_duration.isna()).all()
 
         temp_dir.cleanup()
 

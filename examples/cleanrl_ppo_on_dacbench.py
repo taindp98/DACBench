@@ -7,15 +7,14 @@ import random
 import time
 from collections.abc import Callable
 from distutils.util import strtobool
-from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import torch
 from dacbench import benchmarks
+from dacbench.wrappers import ObservationWrapper
 from torch import nn, optim
 from torch.distributions.normal import Normal
-from torch.utils.tensorboard import SummaryWriter
 
 
 def evaluate(
@@ -54,7 +53,7 @@ def evaluate(
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp-name", type=str, default=Path.name(__file__).rstrip(".py"),
+    parser.add_argument("--exp-name", type=str, default="cleanrl_example",
         help="the name of this experiment")
     parser.add_argument("--seed", type=int, default=1,
         help="seed of the experiment")
@@ -117,8 +116,11 @@ def make_env(benchmark_name, config=None):
     def thunk():
         bench = getattr(benchmarks, benchmark_name)(config=config)
         env = bench.get_environment()
-        env = gym.wrappers.FlattenObservation(env)
+        env = ObservationWrapper(env)
         return gym.wrappers.RecordEpisodeStatistics(env)
+
+    print(thunk().get_state(None))
+    print(thunk().reset())
 
     return thunk
 
@@ -135,8 +137,6 @@ class Agent(nn.Module):
     def __init__(self, envs):
         """Init the Agent."""
         super().__init__()
-        print(envs.observation_space)
-        print(envs.observation_space.shape)
         self.critic = nn.Sequential(
             layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), 64)),
             nn.Tanh(),
@@ -179,12 +179,6 @@ if __name__ == "__main__":
     args = parse_args()
     run_name = (
         f"{args.benchmark_name}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    )
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s"
-        % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
 
     # TRY NOT TO MODIFY: seeding
@@ -265,15 +259,7 @@ if __name__ == "__main__":
                 # Skip the envs that are not done
                 if info is None:
                     continue
-                print(
-                    f"global_step={global_step}, episodic_return={info['episode']['r']}"
-                )
-                writer.add_scalar(
-                    "charts/episodic_return", info["episode"]["r"], global_step
-                )
-                writer.add_scalar(
-                    "charts/episodic_length", info["episode"]["l"], global_step
-                )
+                print(f"Step {global_step}, Episodic_Return {info['episode']['r']}")
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -369,22 +355,6 @@ if __name__ == "__main__":
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
-        # TRY NOT TO MODIFY: record rewards for plotting purposes
-        writer.add_scalar(
-            "charts/learning_rate", optimizer.param_groups[0]["lr"], global_step
-        )
-        writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-        writer.add_scalar("losses/explained_variance", explained_var, global_step)
-        print("SPS:", int(global_step / (time.time() - start_time)))
-        writer.add_scalar(
-            "charts/SPS", int(global_step / (time.time() - start_time)), global_step
-        )
-
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"
         torch.save(agent.state_dict(), model_path)
@@ -399,7 +369,6 @@ if __name__ == "__main__":
             device=device,
         )
         for idx, episodic_return in enumerate(episodic_returns):
-            writer.add_scalar("eval/episodic_return", episodic_return, idx)
+            print(f"Eval/episodic_return: {episodic_return} on episode {idx}")
 
     envs.close()
-    writer.close()

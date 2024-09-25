@@ -1,12 +1,11 @@
 """Logger helper."""
+
 from __future__ import annotations
 
 import json
 from abc import ABCMeta, abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Callable, Iterable
-from datetime import datetime
-from functools import reduce
 from itertools import chain
 from numbers import Number
 from pathlib import Path
@@ -30,7 +29,8 @@ def load_logs(log_file: Path) -> list[dict]:
         'step': 1,
         'example_log_val':  {
             'values': [val1, val2, ... valn],
-            'times: [time1, time2, ..., timen],
+            'episode: [ep1, ep2, ..., epn],
+            'step': [step1, step2, ..., stepn],
         }
         ...
     }
@@ -45,8 +45,8 @@ def load_logs(log_file: Path) -> list[dict]:
     [Dict, ...]
 
     """
-    with open(log_file) as log_file:
-        return list(map(json.loads, log_file))
+    with open(log_file) as f:
+        return list(map(json.loads, f))
 
 
 def split(predicate: Callable, iterable: Iterable) -> tuple[list, list]:
@@ -81,13 +81,12 @@ def flatten_log_entry(log_entry: dict) -> list[dict]:
         'episode': 2,
         'some_value': {
             'values' : [34, 45],
-            'times':['28-12-20 16:20:53', '28-12-20 16:21:30'],
         }
     }
     To:
     [
-        { 'step': 0,'episode': 2, 'value': 34, 'time': '28-12-20 16:20:53'},
-        { 'step': 0,'episode': 2, 'value': 45, 'time': '28-12-20 16:21:30'}
+        { 'step': 0,'episode': 2, 'value': 34,},
+        { 'step': 0,'episode': 2, 'value': 45,}
     ]
 
     Parameters
@@ -100,19 +99,8 @@ def flatten_log_entry(log_entry: dict) -> list[dict]:
         lambda item: isinstance(item[1], dict), log_entry.items()
     )
     rows = []
-    for value_name, value_dict in dict_entries:
-        current_rows = (
-            dict(
-                [
-                    *top_level_entries,
-                    (f"{value_name}", value),
-                    (f"{value_name}_time", time),
-                ]
-            )
-            for value, time in zip(
-                value_dict["values"], value_dict["times"], strict=False
-            )
-        )
+    for _value_name, value_dict in dict_entries:
+        current_rows = dict([*top_level_entries, *value_dict])
         rows.extend(map(dict, current_rows))
     return rows
 
@@ -161,14 +149,18 @@ def log2dataframe(
     dataframe
 
     """
-    flat_logs = map(flatten_log_entry, logs)
-    rows = reduce(lambda l1, l2: l1 + l2, flat_logs)
-
-    dataframe = pd.DataFrame(rows)
-    # dataframe.time = pd.to_datetime(dataframe.time)
+    dataframe = pd.DataFrame(logs)
 
     if drop_columns is not None:
         dataframe = dataframe.drop(columns=drop_columns)
+
+    for column in dataframe.columns:
+        if "episode_" in column:
+            dataframe = dataframe.join(
+                dataframe.groupby("episode")[column].max(), on="episode", rsuffix="_new"
+            )
+            dataframe = dataframe.drop(columns=column)
+            dataframe = dataframe.rename(columns={f"{column}_new": column})
 
     dataframe = dataframe.infer_objects()
     list_column_candidates = dataframe.dtypes == object
@@ -498,7 +490,7 @@ class ModuleLogger(AbstractLogger):
 
     @staticmethod
     def __init_dict():
-        return defaultdict(lambda: {"times": [], "values": []})
+        return defaultdict(dict)
 
     def reset_episode(self) -> None:
         """Resets the episode and step. Be aware that this can lead to ambitious keys
@@ -577,17 +569,13 @@ class ModuleLogger(AbstractLogger):
            those are supported.
 
         """
-        self.__log(key, value, datetime.now().strftime("%d-%m-%y %H:%M:%S.%f"))
-
-    def __log(self, key, value, time):
         if not self.is_of_valid_type(value):
             valid_types = self._pretty_valid_types()
             raise ValueError(
                 f"value {type(value)} is not of valid type or a recursive composition"
                 f"of valid types ({valid_types})"
             )
-        self.current_step[key]["times"].append(time)
-        self.current_step[key]["values"].append(value)
+        self.current_step[key] = value
 
     def log_dict(self, data: dict) -> None:
         """Alternative to log if more the one value should be logged at once.
@@ -598,9 +586,8 @@ class ModuleLogger(AbstractLogger):
             a dict with key-value so that each value is a valid value for log
 
         """
-        time = datetime.now().strftime("%d-%m-%y %H:%M:%S.%f")
         for key, value in data.items():
-            self.__log(key, value, time)
+            self.log(key, value)
 
     @staticmethod
     def __space_dict(key: str, value, space_info):
@@ -639,7 +626,7 @@ class ModuleLogger(AbstractLogger):
                 else zip(space_info, value.values(), strict=False)
             )
             dicts = (
-                ModuleLogger.__space_dict(f"{key}_{sub_key}", sub_value, None)
+                ModuleLogger.__space_dict(f"{sub_key}", sub_value, None)
                 for sub_key, sub_value in key_suffix
             )
             data = dict(ChainMap(*dicts))

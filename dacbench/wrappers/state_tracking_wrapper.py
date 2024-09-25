@@ -1,4 +1,5 @@
 """Wrapper for the state tracking."""
+
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
@@ -108,7 +109,7 @@ class StateTrackingWrapper(Wrapper):
             return object.__getattribute__(self, name)
         return getattr(self.env, name)
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         """Reset environment and record starting state.
 
         Returns:
@@ -117,7 +118,9 @@ class StateTrackingWrapper(Wrapper):
             state, info
 
         """
-        state, info = self.env.reset()
+        if options is None:
+            options = {}
+        state, info = self.env.reset(seed=seed, options=options)
         self.overall_states.append(state)
         if self.state_interval:
             if len(self.current_states) < self.state_interval:

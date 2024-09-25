@@ -5,7 +5,7 @@ from pathlib import Path
 # `singularity build --fakeroot dachbench.sif dacbench/container/singularity_recipes/dachbench.def` from project root.
 # For more details refer to dacbench/container/Container Roadmap.md
 from dacbench.agents import RandomAgent
-from dacbench.benchmarks import SigmoidBenchmark
+from dacbench.benchmarks import FunctionApproximationBenchmark
 from dacbench.container.remote_runner import RemoteRunner
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # config
     # more extensive tests needed here to find bugs/missing implementation
-    benchmark = SigmoidBenchmark()
+    benchmark = FunctionApproximationBenchmark()
     benchmark.set_seed(42)
     episodes = 10
 

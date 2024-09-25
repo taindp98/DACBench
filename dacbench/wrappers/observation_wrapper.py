@@ -1,4 +1,5 @@
 """Wrapper that converts observation spaces to spaces.Box."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -81,7 +82,7 @@ class ObservationWrapper(Wrapper):
         state = self.flatten(state)
         return state, reward, terminated, truncated, info
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         """Execute environment step and record distance.
 
         Returns:
@@ -90,7 +91,9 @@ class ObservationWrapper(Wrapper):
             state, info
 
         """
-        state, info = self.env.reset()
+        if options is None:
+            options = {}
+        state, info = self.env.reset(seed, options)
         state = self.flatten(state)
         return state, info
 

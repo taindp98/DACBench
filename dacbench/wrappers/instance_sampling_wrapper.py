@@ -1,4 +1,5 @@
 """Wrapper for instance sampling."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -75,7 +76,7 @@ class InstanceSamplingWrapper(Wrapper):
 
         return getattr(self.env, name)
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         """Reset environment and use sampled instance for training.
 
         Returns:
@@ -84,10 +85,12 @@ class InstanceSamplingWrapper(Wrapper):
             state
 
         """
+        if options is None:
+            options = {}
         if self.reset_tracker >= self.reset_interval:
             instance = self.sampling_function()
             self.env.use_next_instance(instance=instance)
-        return self.env.reset()
+        return self.env.reset(seed=seed, options=options)
 
     def fit_dist(self, instances):
         """Approximate instance distribution in given instance set.
@@ -104,8 +107,8 @@ class InstanceSamplingWrapper(Wrapper):
 
         """
         dists = []
-        for i in range(len(instances[0])):
-            component = [instances[k][i] for k in instances]
+        for k in instances[0].__dict__:
+            component = [instances[i].__dict__[k] for i in instances]
             dist = norm.fit(component)
             dists.append(dist)
 

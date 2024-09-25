@@ -170,7 +170,7 @@ class TestStateTrackingWrapper(unittest.TestCase):
                 self.reward_range = (1, 2)
                 self.metadata = {}
 
-            def reset(self):
+            def reset(self, seed=None, options=None):
                 return 1, {}
 
             def step(self, _):
@@ -190,7 +190,7 @@ class TestStateTrackingWrapper(unittest.TestCase):
                 self.reward_range = (1, 2)
                 self.metadata = {}
 
-            def reset(self):
+            def reset(self, seed=None, options=None):
                 return [1, 2], {}
 
             def step(self, _):
@@ -210,7 +210,7 @@ class TestStateTrackingWrapper(unittest.TestCase):
                 self.reward_range = (1, 2)
                 self.metadata = {}
 
-            def reset(self):
+            def reset(self, seed=None, options=None):
                 return [1, 1], {}
 
             def step(self, _):

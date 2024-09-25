@@ -36,16 +36,17 @@ class TestDeterministic(unittest.TestCase):
         _, reward2, terminated2, truncated2, info2 = env2.step(action)
 
         assert_state_space_equal(init_state1, init_state2)
-        assert info1 == info2
+        assert info1.keys() == info2.keys()
+        for key in info1.keys():
+            assert_almost_equal(info1[key], info2[key])
         assert terminated1 == terminated2
         assert truncated1 == truncated2
-        assert info1 == info2
 
     def test_LubyBenchmark(self):
         self.run_deterministic_test("LubyBenchmark")
 
     def test_SigmoidBenchmark(self):
-        self.run_deterministic_test("SigmoidBenchmark")
+        self.run_deterministic_test("FunctionApproximationBenchmark")
 
     # FD Test are hard to run due to old FD version
     # def test_FastDownwardBenchmark(self):

@@ -1,13 +1,62 @@
 """CMA ES Environment."""
+
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-from IOHexperimenter import IOH_function
 from modcma import ModularCMAES, Parameters
 
 from dacbench import AbstractMADACEnv
+
+if TYPE_CHECKING:
+    from env_utils.toy_functions import AbstractFunction
+
+BINARIES = {True: 1, False: 0}
+STEP_SIZE_ADAPTATION = {
+    "csa": 0,
+    "tpa": 1,
+    "msr": 2,
+    "xnes": 3,
+    "m-xnes": 4,
+    "lp-xnes": 5,
+    "psr": 6,
+}
+MIRRORED = {"None": 0, "mirrored": 1, "mirrored pairwise": 2}
+BASE_SAMPLER = {"gaussian": 0, "sobol": 1, "halton": 2}
+WEIGHTS_OPTION = {"default": 0, "equal": 1, "1/2^lambda": 2}
+LOCAL_RESTART = {"None": 0, "IPOP": 1, "BIPOP": 2}
+BOUND_CORRECTION = {
+    "None": 0,
+    "saturate": 1,
+    "unif_resample": 2,
+    "COTN": 3,
+    "toroidal": 4,
+    "mirror": 5,
+}
+
+
+@dataclass
+class CMAESInstance:
+    """CMA-ES Instance."""
+
+    target_function: AbstractFunction
+    dim: int
+    fid: int
+    iid: int
+    active: bool
+    elitist: bool
+    orthogonal: bool
+    sequential: bool
+    threshold_convergence: bool
+    step_size_adaptation: str
+    mirrored: str
+    base_sampler: str
+    weights_option: str
+    local_restart: str
+    bound_correction: str
 
 
 class CMAESEnv(AbstractMADACEnv):
@@ -20,13 +69,6 @@ class CMAESEnv(AbstractMADACEnv):
         self.es = None
         self.budget = config.budget
         self.total_budget = self.budget
-
-        # Find all set hyperparam_defaults and replace cma defaults
-        if "config_space" in config:
-            for name in config["config_space"]:
-                value = self.config.get(name)
-                if value:
-                    self.representation_dict[self._uniform_name(name)] = value
 
         if not config.get("normalize_reward", False):
             self.get_reward = config.get("reward_function", self.get_default_reward)
@@ -49,27 +91,27 @@ class CMAESEnv(AbstractMADACEnv):
         if options is None:
             options = {}
         super().reset_(seed)
-        self.dim, self.fid, self.iid, self.representation = self.instance
         self.representation_dict = {
-            "active": self.representation[0],
-            "elitist": self.representation[1],
-            "orthogonal": self.representation[2],
-            "sequential": self.representation[3],
-            "threshold_convergence": self.representation[4],
-            "step_size_adaptation": self.representation[5],
-            "mirrored": self.representation[6],
-            "base_sampler": self.representation[7],
-            "weights_option": self.representation[8],
-            "local_restart": self.representation[9],
-            "bound_correction": self.representation[10],
+            "active": BINARIES[self.instance.active],
+            "elitist": BINARIES[self.instance.elitist],
+            "orthogonal": BINARIES[self.instance.orthogonal],
+            "sequential": BINARIES[self.instance.sequential],
+            "threshold_convergence": BINARIES[self.instance.threshold_convergence],
+            "step_size_adaptation": STEP_SIZE_ADAPTATION[
+                self.instance.step_size_adaptation
+            ],
+            "mirrored": MIRRORED[self.instance.mirrored],
+            "base_sampler": BASE_SAMPLER[self.instance.base_sampler],
+            "weights_option": WEIGHTS_OPTION[self.instance.weights_option],
+            "local_restart": LOCAL_RESTART[self.instance.local_restart],
+            "bound_correction": BOUND_CORRECTION[self.instance.bound_correction],
         }
-        self.objective = IOH_function(
-            self.fid, self.dim, self.iid, target_precision=1e-8
-        )
+        self.objective = self.instance.target_function
         self.es = ModularCMAES(
             self.objective,
             parameters=Parameters.from_config_array(
-                self.dim, np.array(self.representation).astype(int)
+                self.instance.dim,
+                np.array(list(self.representation_dict.values())).astype(int),
             ),
         )
         return self.get_state(self), {}
@@ -100,7 +142,9 @@ class CMAESEnv(AbstractMADACEnv):
         else:
             raise ValueError("Action must be a Dict")
 
-        new_parameters = Parameters.from_config_array(self.dim, complete_action)
+        new_parameters = Parameters.from_config_array(
+            self.instance.dim, complete_action
+        )
         self.es.parameters.update(
             {m: getattr(new_parameters, m) for m in Parameters.__modules__}
         )
@@ -134,7 +178,7 @@ class CMAESEnv(AbstractMADACEnv):
         Returns:
             float: The calculated reward
         """
-        obj_min, obj_max = self.objective.get_target(), 0
+        obj_min, obj_max = self.objective.fmin, 0
         current_reward = -self.es.parameters.fopt
         norm_reward = (current_reward - obj_min) / (obj_max - obj_min)
         return max(self.reward_range[0], min(self.reward_range[1], norm_reward))
@@ -153,8 +197,8 @@ class CMAESEnv(AbstractMADACEnv):
                 self.es.parameters.lambda_,
                 self.es.parameters.sigma,
                 self.budget - self.es.parameters.used_budget,
-                self.fid,
-                self.iid,
+                self.instance.fid,
+                self.instance.iid,
             ]
         )
 

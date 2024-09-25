@@ -1,4 +1,5 @@
 """Abstract Benchmark."""
+
 from __future__ import annotations
 
 import json
@@ -7,6 +8,7 @@ from functools import partial
 from types import FunctionType
 
 import numpy as np
+from ConfigSpace import ConfigurationSpace
 from gymnasium import spaces
 
 from dacbench import wrappers
@@ -70,9 +72,8 @@ class AbstractBenchmark(ABC):
         if "action_space" in self.config:
             conf["action_space"] = self.space_to_list(conf["action_space"])
 
-        # TODO: how can we use the built in serialization of configspace here?
         if "config_space" in self.config:
-            conf["config_space"] = self.process_configspace(self.config.config_space)
+            conf["config_space"] = self.config.config_space.to_serialized_dict()
 
         conf = AbstractBenchmark.__stringify_functions(conf)
 
@@ -99,124 +100,14 @@ class AbstractBenchmark(ABC):
 
         return conf
 
-    def process_configspace(self, configuration_space):
-        """This is largely the builting cs.json.write method, but doesn't save the
-        result directly. If this is ever implemented in cs, we can replace this method.
-        """
-        from ConfigSpace.configuration_space import ConfigurationSpace
-        from ConfigSpace.hyperparameters import (
-            CategoricalHyperparameter,
-            Constant,
-            NormalFloatHyperparameter,
-            NormalIntegerHyperparameter,
-            OrdinalHyperparameter,
-            UniformFloatHyperparameter,
-            UniformIntegerHyperparameter,
-            UnParametrizedHyperparameter,
-        )
-        from ConfigSpace.read_and_write.json import (
-            _build_categorical,
-            _build_condition,
-            _build_constant,
-            _build_forbidden,
-            _build_normal_float,
-            _build_normal_int,
-            _build_ordinal,
-            _build_uniform_float,
-            _build_uniform_int,
-            _build_unparametrized_hyperparameter,
-        )
-
-        if not isinstance(configuration_space, ConfigurationSpace):
-            raise TypeError(
-                f"pcs_parser.write expects an instance of {ConfigurationSpace}, "
-                f"you provided '{type(configuration_space)}'"
-            )
-
-        hyperparameters = []
-        conditions = []
-        forbiddens = []
-
-        for hyperparameter in configuration_space.get_hyperparameters():
-            if isinstance(hyperparameter, Constant):
-                hyperparameters.append(_build_constant(hyperparameter))
-            elif isinstance(hyperparameter, UnParametrizedHyperparameter):
-                hyperparameters.append(
-                    _build_unparametrized_hyperparameter(hyperparameter)
-                )
-            elif isinstance(hyperparameter, UniformFloatHyperparameter):
-                hyperparameters.append(_build_uniform_float(hyperparameter))
-            elif isinstance(hyperparameter, NormalFloatHyperparameter):
-                hyperparameters.append(_build_normal_float(hyperparameter))
-            elif isinstance(hyperparameter, UniformIntegerHyperparameter):
-                hyperparameters.append(_build_uniform_int(hyperparameter))
-            elif isinstance(hyperparameter, NormalIntegerHyperparameter):
-                hyperparameters.append(_build_normal_int(hyperparameter))
-            elif isinstance(hyperparameter, CategoricalHyperparameter):
-                hyperparameters.append(_build_categorical(hyperparameter))
-            elif isinstance(hyperparameter, OrdinalHyperparameter):
-                hyperparameters.append(_build_ordinal(hyperparameter))
-            else:
-                raise TypeError(
-                    f"Unknown type: {type(hyperparameter)} ({hyperparameter})"
-                )
-
-        for condition in configuration_space.get_conditions():
-            conditions.append(_build_condition(condition))
-
-        for forbidden_clause in configuration_space.get_forbiddens():
-            forbiddens.append(_build_forbidden(forbidden_clause))
-
-        rval = {}
-        if configuration_space.name is not None:
-            rval["name"] = configuration_space.name
-        rval["hyperparameters"] = hyperparameters
-        rval["conditions"] = conditions
-        rval["forbiddens"] = forbiddens
-
-        return rval
-
     @classmethod
     def from_json(cls, json_config):
         """Get config from json dict."""
         config = objdict(json.loads(json_config))
         if "config_space" in config:
-            from ConfigSpace import ConfigurationSpace
-            from ConfigSpace.read_and_write.json import (
-                _construct_condition,
-                _construct_forbidden,
-                _construct_hyperparameter,
+            configuration_space = ConfigurationSpace.from_serialized_dict(
+                config["config_space"]
             )
-
-            if "name" in config.config_space:
-                configuration_space = ConfigurationSpace(
-                    name=config.config_space["name"]
-                )
-            else:
-                configuration_space = ConfigurationSpace()
-
-            for hyperparameter in config.config_space["hyperparameters"]:
-                configuration_space.add_hyperparameter(
-                    _construct_hyperparameter(
-                        hyperparameter,
-                    )
-                )
-
-            for condition in config.config_space["conditions"]:
-                configuration_space.add_condition(
-                    _construct_condition(
-                        condition,
-                        configuration_space,
-                    )
-                )
-
-            for forbidden in config.config_space["forbiddens"]:
-                configuration_space.add_forbidden_clause(
-                    _construct_forbidden(
-                        forbidden,
-                        configuration_space,
-                    )
-                )
             config.config_space = configuration_space
 
         return cls(config=config)

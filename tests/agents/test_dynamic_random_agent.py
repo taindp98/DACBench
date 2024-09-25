@@ -4,14 +4,12 @@ import unittest
 
 import numpy as np
 from dacbench.agents import DynamicRandomAgent
-from dacbench.benchmarks import SigmoidBenchmark
-from dacbench.wrappers import MultiDiscreteActionWrapper
+from dacbench.benchmarks import FunctionApproximationBenchmark
 
 
 class MyTestCase(unittest.TestCase):
     def get_agent(self, switching_interval):
-        env = SigmoidBenchmark().get_benchmark()
-        env = MultiDiscreteActionWrapper(env)
+        env = FunctionApproximationBenchmark().get_benchmark()
         env.action_space.seed(0)
         agent = DynamicRandomAgent(env, switching_interval=switching_interval)
         return agent, env

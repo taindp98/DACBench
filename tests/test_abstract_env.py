@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import unittest
-
 import numpy as np
 import pytest
 from dacbench.abstract_env import AbstractEnv
@@ -16,7 +14,7 @@ class LessAbstractEnv(AbstractEnv):
         pass
 
 
-class TestAbstractEnv(unittest.TestCase):
+class TestAbstractEnv:
     def test_exceptions(self):
         config = {
             "action_space_class": "Discrete",

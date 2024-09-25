@@ -1,4 +1,5 @@
 """Run policies for baselines."""
+
 from __future__ import annotations
 
 import argparse

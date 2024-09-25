@@ -37,7 +37,7 @@ The main idea is to run the components that have either complicated dependencies
 
  Workflow of remote benchmark execution:
 ```python
-benchmark = SigmoidBenchmark()
+benchmark = FunctionApproximationBenchmark()
 # adapt default config or load from file
 benchmark.set_seed(42) 
 

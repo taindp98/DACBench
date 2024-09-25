@@ -1,4 +1,5 @@
 """Wrapper for performance tracking."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -148,7 +149,7 @@ class PerformanceTrackingWrapper(Wrapper):
                     self.performance_intervals.append(self.current_performance)
                     self.current_performance = [self.episode_performance]
             if self.track_instances:
-                key = "".join(str(e) for e in self.env.instance)
+                key = "".join(str(e) for e in self.env.instance.__dict__.values())
                 self.instance_performances[key].append(self.episode_performance)
             self.episode_performance = 0
         return state, reward, terminated, truncated, info

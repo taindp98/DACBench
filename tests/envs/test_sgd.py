@@ -11,7 +11,7 @@ from dacbench import AbstractEnv
 from dacbench.abstract_benchmark import objdict
 from dacbench.benchmarks.sgd_benchmark import SGD_DEFAULTS, SGDBenchmark
 from dacbench.envs.env_utils import sgd_utils
-from dacbench.envs.sgd import SGDEnv
+from dacbench.envs.sgd import SGDEnv, SGDInstance
 from dacbench.wrappers import ObservationWrapper
 
 
@@ -33,8 +33,7 @@ class TestSGDEnv(unittest.TestCase):
         assert issubclass(type(env), AbstractEnv)
         assert env.learning_rate is None
         assert env.initial_seed == self.seed
-        assert env.batch_size == SGD_DEFAULTS["training_batch_size"]
-        assert env.use_momentum == SGD_DEFAULTS["use_momentum"]
+        assert isinstance(env.instance, SGDInstance)
         assert env.n_steps == SGD_DEFAULTS["cutoff"]
 
     def test_reward_function(self):
@@ -47,7 +46,6 @@ class TestSGDEnv(unittest.TestCase):
         benchmark.read_instance_set()
 
         env = SGDEnv(benchmark.config)
-        assert env.optimizer_params == SGD_DEFAULTS.optimizer_params
         assert env.get_reward == dummy_func
 
         env2 = self.make_env()
@@ -66,6 +64,7 @@ class TestSGDEnv(unittest.TestCase):
         state, info = env.reset()
 
         # Test if step method executes without error
+        print(env.model)
         state, reward, done, truncated, info = env.step(0.001)
         assert isinstance(state, dict)
         assert isinstance(reward, float)
@@ -98,12 +97,14 @@ class TestSGDEnv(unittest.TestCase):
 
     def test_torch_hub_loading(self):
         bench = SGDBenchmark()
-        bench.config.torch_hub_model = ('pytorch/vision:v0.10.0', 'resnet18', False)
-        bench.config.dataset_name = "CIFAR10"
         env = bench.get_environment()
+        env.instance_id_list = [0]
+        env.instance_set = {0: env.instance_set[0]}
+        env.instance_set[0].model = sgd_utils.load_model_from_torchhub(model_repo="chenyaofo/pytorch-cifar-models", model_name="cifar10_resnet20", pretrained=False)
         env.reset()
         assert env.model is not None
         assert env.model.__class__.__name__ == "Sequential"
+        print(env.instance.dataset_name)
         env.step(0.001)
 
     def test_crash(self):

@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 import pytest
 from dacbench.benchmarks import LubyBenchmark
+from dacbench.envs import LubyInstance
 from dacbench.wrappers import InstanceSamplingWrapper
 from sklearn.metrics import mutual_info_score
 
@@ -30,7 +31,7 @@ class TestInstanceSamplingWrapper(unittest.TestCase):
         env = bench.get_environment()
 
         def sample():
-            return [1, 1]
+            return LubyInstance(4, 4)
 
         wrapped = InstanceSamplingWrapper(env, sampling_function=sample)
 
@@ -52,12 +53,14 @@ class TestInstanceSamplingWrapper(unittest.TestCase):
         samples = []
         for _ in range(100):
             samples.append(wrapped.sampling_function())
-        mi1 = mutual_info_score(
-            np.array(list(instances.values()))[:, 0], np.array(samples)[:, 0]
-        )
-        mi2 = mutual_info_score(
-            np.array(list(instances.values()))[:, 1], np.array(samples)[:, 1]
-        )
+
+        starts_instance_set = [instances[i].start_shift for i in instances]
+        starts_samples = [samples[i][0] for i in range(len(samples))]
+        stickies_instance_set = [instances[i].sticky_shift for i in instances]
+        stickies_samples = [samples[i][1] for i in range(len(samples))]
+
+        mi1 = mutual_info_score(starts_instance_set, starts_samples)
+        mi2 = mutual_info_score(stickies_instance_set, stickies_samples)
 
         assert mi1 > 0.99
         assert mi1 != 1

@@ -1,4 +1,5 @@
 """Optimal policy for luby."""
+
 from __future__ import annotations
 
 

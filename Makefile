@@ -22,9 +22,9 @@ PYTHON ?= python
 CYTHON ?= cython
 PYTEST ?= python -m pytest
 CTAGS ?= ctags
-PIP ?= python -m pip
+PIP ?= uv pip
 MAKE ?= make
-RUFF ?= python -m ruff
+RUFF ?= uvx ruff
 PRECOMMIT ?= pre-commit
 
 DIR := ${CURDIR}
@@ -33,8 +33,11 @@ DOCDIR := ${CURDIR}/docs
 INDEX_HTML := file://${DOCDIR}/html/build/index.html
 
 install-dev:
-	$(PIP) install -e ".[dev, docs, all, examples]"
+	$(PIP) install -e ".[dev, docs, all, example]"
 	pre-commit install
+
+install:
+	$(PIP) install -e .
 
 # pydocstyle does not have easy ignore rules, instead, we include as they are covered
 check:
@@ -56,9 +59,15 @@ clean-doc:
 clean-build:
 	$(PYTHON) setup.py clean
 	rm -rf ${DIST}
+	rm -rf build
+
+clean-examples:
+	rm -rf examples/plotting
+	rm -rf examples/wrappers
+	rm -rf dacbench_tabular
 
 # Clean up any builds in ./dist as well as doc
-clean: clean-doc clean-build
+clean: clean-doc clean-build clean-examples
 
 # Build a distribution in ./dist
 build:

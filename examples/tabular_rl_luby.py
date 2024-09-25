@@ -10,7 +10,7 @@ import numpy as np
 from dacbench.benchmarks import LubyBenchmark
 
 # Make Luby environment
-from examples.example_utils import (
+from example_utils import (
     EpisodeStats,
     QTable,
     get_decay_schedule,

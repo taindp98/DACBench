@@ -1,15 +1,16 @@
 """Luby Benchmark."""
+
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 
 import ConfigSpace as CS  # noqa: N817
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
+import pandas as pd
 
 from dacbench.abstract_benchmark import AbstractBenchmark, objdict
-from dacbench.envs import LubyEnv, luby_gen
+from dacbench.envs import LubyEnv, LubyInstance, luby_gen
 from dacbench.wrappers import RewardNoiseWrapper
 
 MAX_STEPS = 2**6
@@ -20,7 +21,7 @@ DEFAULT_CFG_SPACE = CS.ConfigurationSpace()
 SEQ = CSH.UniformIntegerHyperparameter(
     name="sequence_element", lower=0, upper=np.log2(MAX_STEPS)
 )
-DEFAULT_CFG_SPACE.add_hyperparameter(SEQ)
+DEFAULT_CFG_SPACE.add(SEQ)
 
 INFO = {
     "identifier": "Luby",
@@ -50,7 +51,7 @@ LUBY_DEFAULTS = objdict(
         "hist_length": HISTORY_LENGTH,
         "min_steps": 2**3,
         "seed": 0,
-        "instance_set_path": "../instance_sets/luby/luby_default.csv",
+        "instance_set_path": "luby_default.csv",
         "benchmark_info": INFO,
     }
 )
@@ -134,19 +135,43 @@ class LubyBenchmark(AbstractBenchmark):
     def read_instance_set(self, test=False):
         """Read instance set from file."""
         if test:
-            path = Path(__file__).resolve().parent / self.config.test_set_path
+            path = Path(self.config.test_set_path)
+            relative_path = Path(__file__).resolve().parent / self.config.test_set_path
+            dacbench_path = (
+                Path(__file__).resolve().parent
+                / "../instance_sets/luby"
+                / self.config.test_set_path
+            )
             keyword = "test_set"
         else:
-            path = Path(__file__).resolve().parent / self.config.instance_set_path
+            path = Path(self.config.instance_set_path)
+            relative_path = (
+                Path(__file__).resolve().parent / self.config.instance_set_path
+            )
+            dacbench_path = (
+                Path(__file__).resolve().parent
+                / "../instance_sets/luby"
+                / self.config.instance_set_path
+            )
             keyword = "instance_set"
 
+        if path.is_file():
+            path = path  # noqa: PLW0127
+        elif relative_path.is_file():
+            path = relative_path
+        elif dacbench_path.is_file():
+            path = dacbench_path
+        else:
+            raise FileNotFoundError(
+                f"Test set not found at {self.config.test_set_path}"
+            )
+
         self.config[keyword] = {}
-        with open(path) as fh:
-            reader = csv.DictReader(fh)
-            for row in reader:
-                self.config[keyword][int(row["ID"])] = [
-                    float(shift) for shift in row["start"].split(",")
-                ] + [float(slope) for slope in row["sticky"].split(",")]
+        instance_df = pd.read_csv(path)
+        for index, row in instance_df.iterrows():
+            self.config[keyword][index] = LubyInstance(
+                start_shift=row["start"], sticky_shift=row["sticky"]
+            )
 
     def get_benchmark(self, min_l=8, fuzziness=1.5, seed=0):
         """Get Benchmark from DAC paper.
@@ -168,7 +193,7 @@ class LubyBenchmark(AbstractBenchmark):
         self.config = objdict(LUBY_DEFAULTS.copy())
         self.config.min_steps = min_l
         self.config.seed = seed
-        self.config.instance_set = {0: [0, 0]}
+        self.config.instance_set = {0: LubyInstance(start_shift=0, sticky_shift=0)}
         self.config.reward_range = (-10, 10)
         env = LubyEnv(self.config)
         rng = np.random.RandomState(self.config.seed)

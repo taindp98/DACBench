@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-import unittest
 
 import numpy as np
 import pytest
@@ -22,7 +21,7 @@ class LessAbstractBenchmark(AbstractBenchmark):
         pass
 
 
-class TestAbstractBenchmark(unittest.TestCase):
+class TestAbstractBenchmark:
     def test_setup(self):
         bench = LessAbstractBenchmark()
         assert bench.config is None

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import tempfile
-import unittest
 from pathlib import Path
 
 import matplotlib
@@ -14,14 +13,19 @@ from gymnasium import spaces
 matplotlib.use("Agg")
 
 
-class TestRunner(unittest.TestCase):
+class TestRunner:
     def test_loop(self):
         class DummyAgent(AbstractDACBenchAgent):
             def __init__(self, env):
+                self.dict_action = False
                 if isinstance(env.action_space, spaces.Discrete):
                     self.num_actions = 1
                 elif isinstance(env.action_space, spaces.MultiDiscrete):
                     self.num_actions = len(env.action_space.nvec)
+                elif isinstance(env.action_space, spaces.Dict):
+                    self.num_actions = len(env.action_space.spaces)
+                    self.dict_action = True
+                    self.dict_keys = list(env.action_space.keys())
                 else:
                     self.num_actions = len(env.action_space.high)
 
@@ -29,6 +33,8 @@ class TestRunner(unittest.TestCase):
                 action = np.ones(self.num_actions)
                 if self.num_actions == 1:
                     action = 1
+                if self.dict_action:
+                    action = {key: action[i] for i, key in enumerate(self.dict_keys)}
                 return action
 
             def train(self, reward, state):
@@ -45,9 +51,9 @@ class TestRunner(unittest.TestCase):
                 tmp_dir,
                 make,
                 1,
-                bench=["LubyBenchmark", "SigmoidBenchmark"],
+                bench=["LubyBenchmark", "FunctionApproximationBenchmark"],
                 seeds=[42],
             )
             path = Path(tmp_dir)
             assert os.stat(path / "LubyBenchmark") != 0
-            assert os.stat(path / "SigmoidBenchmark") != 0
+            assert os.stat(path / "FunctionApproximationBenchmark") != 0

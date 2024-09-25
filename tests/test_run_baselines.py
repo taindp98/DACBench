@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import tempfile
-import unittest
 from pathlib import Path
 
 import dacbench
@@ -15,7 +14,7 @@ from dacbench.run_baselines import (  # run_dynamic_policy,
 )
 
 
-class TestRunBaselines(unittest.TestCase):
+class TestRunBaselines:
     def run_random_test_with_benchmark(self, benchmark):
         seeds = [42]
         fixed = 2
@@ -40,18 +39,11 @@ class TestRunBaselines(unittest.TestCase):
             assert len(logs) == num_episodes
             assert (logs["seed"] == seeds[0]).all()
 
-    def test_run_random_SigmoidBenchmark(self):
-        self.run_random_test_with_benchmark("SigmoidBenchmark")
+    def test_run_random_FunctionApproximationBenchmark(self):
+        self.run_random_test_with_benchmark("FunctionApproximationBenchmark")
 
     def test_run_random_LubyBenchmark(self):
         self.run_random_test_with_benchmark("LubyBenchmark")
-
-    # def test_run_random_FastDownwardBenchmark(self):
-    #     self.run_random_test_with_benchmark("FastDownwardBenchmark")
-
-    @unittest.skip("Due to issue #97")
-    def test_run_random_SGDBenchmark(self):
-        self.run_random_test_with_benchmark("SGDBenchmark")
 
     def run_static_test_with_benchmark(self, benchmark):
         seeds = [42]
@@ -80,19 +72,11 @@ class TestRunBaselines(unittest.TestCase):
             assert len(logs) == num_episodes
             assert (logs["seed"] == seeds[0]).all()
 
-    def test_run_static_SigmoidBenchmark(self):
-        self.run_static_test_with_benchmark("SigmoidBenchmark")
+    def test_run_static_FunctionApproximationBenchmark(self):
+        self.run_static_test_with_benchmark("FunctionApproximationBenchmark")
 
     def test_run_static_LubyBenchmark(self):
         self.run_static_test_with_benchmark("LubyBenchmark")
-
-    # Skip FD until further notice
-    # def test_run_static_FastDownwardBenchmark(self):
-    #     self.run_static_test_with_benchmark("FastDownwardBenchmark")
-
-    @unittest.skip("Due to issue #97")
-    def test_run_static_SGDBenchmark(self):
-        self.run_static_test_with_benchmark("SGDBenchmark")
 
     # FIXME: CSA is only for one of the actions, so the search space needs to be configured differently
     # def test_run_dynamic_policy_CMAESBenchmark(self):
@@ -139,8 +123,8 @@ class TestRunBaselines(unittest.TestCase):
     def test_run_optimal_LubyBenchmark(self):
         self.run_optimal_test_with_benchmark("LubyBenchmark")
 
-    def test_run_optimal_SigmoidBenchmark(self):
-        self.run_optimal_test_with_benchmark("SigmoidBenchmark")
+    def test_run_optimal_FunctionApproximationBenchmark(self):
+        self.run_optimal_test_with_benchmark("FunctionApproximationBenchmark")
 
     # def test_run_optimal_FastDownwardBenchmark(self):
     #     self.run_optimal_test_with_benchmark("FastDownwardBenchmark")

@@ -1,4 +1,5 @@
 """Wrapper for action frequency."""
+
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
@@ -110,16 +111,23 @@ class ActionFrequencyWrapper(Wrapper):
 
         """
         state, reward, terminated, truncated, info = self.env.step(action)
-        self.overall_actions.append(action)
+        log_action = action
+        if isinstance(log_action, dict):
+            log_action = list(log_action.values())
+            for i in range(len(log_action)):
+                if isinstance(log_action[i], list | np.ndarray):
+                    log_action[i] = log_action[i][0]
+
+        self.overall_actions.append(log_action)
         if self.logger is not None:
             self.logger.log_space("action", action)
 
         if self.action_interval:
             if len(self.current_actions) < self.action_interval:
-                self.current_actions.append(action)
+                self.current_actions.append(log_action)
             else:
                 self.action_intervals.append(self.current_actions)
-                self.current_actions = [action]
+                self.current_actions = [log_action]
         return state, reward, terminated, truncated, info
 
     def get_actions(self):

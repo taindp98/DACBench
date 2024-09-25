@@ -6,7 +6,7 @@ import unittest
 
 import numpy as np
 from dacbench.benchmarks import LubyBenchmark
-from dacbench.envs import LubyEnv
+from dacbench.envs import LubyEnv, LubyInstance
 from dacbench.wrappers import RewardNoiseWrapper
 
 
@@ -44,12 +44,14 @@ class TestLubyBenchmark(unittest.TestCase):
         bench.read_instance_set()
         print(bench.config.instance_set)
         assert len(bench.config.instance_set.keys()) == 1
-        assert len(bench.config.instance_set[0]) == 2
-        assert bench.config.instance_set[0] == [0, 0]
+        assert isinstance(bench.config.instance_set[0], LubyInstance)
+        assert bench.config.instance_set[0].start_shift == 0
+        assert bench.config.instance_set[0].sticky_shift == 0
         bench2 = LubyBenchmark()
         env = bench2.get_environment()
-        assert len(env.instance_set[0]) == 2
-        assert env.instance_set[0] == [0, 0]
+        assert isinstance(bench.config.instance_set[0], LubyInstance)
+        assert bench.config.instance_set[0].start_shift == 0
+        assert bench.config.instance_set[0].sticky_shift == 0
         assert len(env.instance_set.keys()) == 1
 
     def test_benchmark_env(self):
@@ -75,4 +77,11 @@ class TestLubyBenchmark(unittest.TestCase):
     def test_from_to_json(self):
         bench = LubyBenchmark()
         restored_bench = LubyBenchmark.from_json(bench.to_json())
-        assert bench == restored_bench
+        config_space = bench.config["config_space"]
+        restored_config_space = restored_bench.config["config_space"]
+        del bench.config["config_space"]
+        del restored_bench.config["config_space"]
+        assert bench.config == restored_bench.config
+        print(config_space._hyperparameters)
+        print(restored_config_space._hyperparameters)
+        assert config_space._hyperparameters == restored_config_space._hyperparameters

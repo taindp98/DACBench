@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from dacbench.agents.simple_agents import RandomAgent
-from dacbench.benchmarks import SigmoidBenchmark
+from dacbench.benchmarks import FunctionApproximationBenchmark
 from dacbench.logger import Logger, load_logs, log2dataframe
 from dacbench.plotting import plot_performance, plot_performance_per_instance
 from dacbench.runner import run_benchmark
@@ -12,7 +12,7 @@ from dacbench.wrappers import PerformanceTrackingWrapper, StateTrackingWrapper
 # Run an experiment and log the results
 if __name__ == "__main__":
     # Make benchmark
-    bench = SigmoidBenchmark()
+    bench = FunctionApproximationBenchmark()
 
     # Run for 10 episodes each on 10 seeds
     num_episodes = 10
