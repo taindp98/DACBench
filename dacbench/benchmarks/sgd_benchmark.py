@@ -73,6 +73,7 @@ SGD_DEFAULTS = objdict(
         "benchmark_info": INFO,
         "epoch_mode": True,
         "local_model_path": False,
+        "dataset_config": None,
     }
 )
 

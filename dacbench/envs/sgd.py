@@ -241,6 +241,7 @@ class SGDEnv(AbstractMADACEnv):
             self.instance.batch_size,
             self.instance.fraction_of_dataset,
             self.instance.train_validation_ratio,
+            dataset_config=self.config.dataset_config,
         )
         self.train_loader, self.validation_loader, self.test_loader = loaders
 

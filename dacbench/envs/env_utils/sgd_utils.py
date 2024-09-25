@@ -16,13 +16,22 @@ datasets.CIFAR10.download  # noqa: B018
 
 DATASETS = {
     "MNIST": {
-        "transform": transforms.Compose(
+        "train_transform": transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        ),
+        "test_transform": transforms.Compose(
             [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
         ),
         "icgen_name": "mnist",
     },
     "CIFAR10": {
-        "transform": transforms.Compose(
+        "train_transform": transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        ),
+        "test_transform": transforms.Compose(
             [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
@@ -31,7 +40,10 @@ DATASETS = {
         "icgen_name": "cifar10",
     },
     "FashionMNIST": {
-        "transform": transforms.Compose(
+        "train_transform": transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+        ),
+        "test_transform": transforms.Compose(
             [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
         ),
         "icgen_name": "fashion_mnist",
@@ -46,26 +58,32 @@ def random_torchvision_loader(
     batch_size: int,
     fraction_of_dataset: float,
     train_validation_ratio: float | None,
+    dataset_config: dict | None = None,
     **kwargs,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Create train, validation, test loaders for `name` dataset."""
     rng = np.random.RandomState(seed)
 
+    if dataset_config is None:
+        dataset_config = DATASETS.copy()
+
     if name is None:
         rng.seed(seed)
-        name = rng.choice(np.array(list(DATASETS.keys())))
+        name = rng.choice(np.array(list(datasets.keys())))
 
     if train_validation_ratio is None:
         train_validation_ratio = (
             1 - int(np.exp(rng.uniform(low=np.log(5), high=np.log(20)))) / 100
         )
 
-    transform = DATASETS[name]["transform"]
+    train_transform = dataset_config[name]["train_transform"]
+    test_transform = dataset_config[name]["test_transform"]
+
     train_dataset = getattr(datasets, name)(
-        dataset_path, train=True, download=True, transform=transform
+        dataset_path, train=True, download=True, transform=train_transform
     )
     train_size = int(len(train_dataset) * fraction_of_dataset)
-    test = getattr(datasets, name)(dataset_path, train=False, transform=transform)
+    test = getattr(datasets, name)(dataset_path, train=False, transform=test_transform)
     train_size = int(len(train_dataset) * train_validation_ratio)
     train_size = train_size - train_size % batch_size
     train, val = torch.utils.data.random_split(
