@@ -43,10 +43,8 @@ class AbstractBenchmark(ABC):
         """Return current configuration.
 
         Returns:
-        -------
-        dict
-            Current config
-
+        --------
+        dict: Current config
         """
         return self.config
 
@@ -127,7 +125,7 @@ class AbstractBenchmark(ABC):
         """Write wrapper description to list.
 
         Returns:
-        -------
+        --------
         list
 
         """
@@ -421,10 +419,8 @@ class AbstractBenchmark(ABC):
         """Make benchmark environment.
 
         Returns:
-        -------
-        env : gym.Env
-            Benchmark environment
-
+        --------
+        gym.Env: Benchmark environment
         """
         raise NotImplementedError
 

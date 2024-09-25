@@ -28,7 +28,7 @@ class LubyEnv(AbstractEnv):
         """Initialize Luby Env.
 
         Parameters
-        -------
+        ----------
         config : objdict
             Environment configuration
         """
@@ -68,9 +68,8 @@ class LubyEnv(AbstractEnv):
             action to execute
 
         Returns:
-        -------
-        np.array, float, bool, bool, dict
-            state, reward, terminated, truncated, info
+        --------
+        np.array, float, bool, bool, dict: state, reward, terminated, truncated, info
         """
         self.done = super().step_()
         self.prev_state = self._state.copy()
@@ -98,9 +97,8 @@ class LubyEnv(AbstractEnv):
         """Resets env.
 
         Returns:
-        -------
-        numpy.array
-            Environment state
+        --------
+        numpy.array: Environment state
         """
         if options is None:
             options = {}
@@ -142,7 +140,8 @@ class LubyEnv(AbstractEnv):
             _ (_type_): Empty parameter, which can be used when overriding
 
         Returns:
-            dict: The current state
+        --------
+        dict: The current state
         """
         if self.c_step == 0:
             self._state = [-1 for _ in range(self._hist_len + 1)]
@@ -159,9 +158,8 @@ class LubyEnv(AbstractEnv):
         """Close Env.
 
         Returns:
-        -------
-        bool
-            Closing confirmation
+        --------
+        bool: Closing confirmation
         """
         return True
 

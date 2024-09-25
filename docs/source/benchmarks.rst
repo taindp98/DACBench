@@ -14,7 +14,7 @@ We recommend using these as an introduction to DAC, to verify new algorithms and
 generate detailed insights.
 They are both based on artificial functions and real algorithms:
 
-- :doc:`Function Approximation <benchmark_docs/_function_approximation>` (Artificial Benchmark):
+- :doc:`Function Approximation <benchmark_docs/function_approximation>` (Artificial Benchmark):
   Function approximation in multiple dimensions with importance weighting.
 - :doc:`Luby <benchmark_docs/luby>` (Artificial Benchmark):
   Learning the Luby sequence.

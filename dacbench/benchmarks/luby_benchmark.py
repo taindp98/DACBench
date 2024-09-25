@@ -64,7 +64,7 @@ class LubyBenchmark(AbstractBenchmark):
         """Initialize Luby Benchmark.
 
         Parameters
-        -------
+        ----------
         config_path : str
             Path to config file (optional)
         """
@@ -80,9 +80,8 @@ class LubyBenchmark(AbstractBenchmark):
         """Return Luby env with current configuration.
 
         Returns:
-        -------
-        LubyEnv
-            Luby environment
+        --------
+        LubyEnv: Luby environment
         """
         if "instance_set" not in self.config:
             self.read_instance_set()
@@ -101,8 +100,8 @@ class LubyBenchmark(AbstractBenchmark):
         """Set cutoff and adapt dependencies.
 
         Parameters
-        -------
-        int
+        ----------
+        int:
             Maximum number of steps
         """
         self.config.cutoff = steps
@@ -122,8 +121,8 @@ class LubyBenchmark(AbstractBenchmark):
         """Set history length and adapt dependencies.
 
         Parameters
-        -------
-        int
+        ----------
+        int:
             History length
         """
         self.config.hist_length = length
@@ -177,7 +176,7 @@ class LubyBenchmark(AbstractBenchmark):
         """Get Benchmark from DAC paper.
 
         Parameters
-        -------
+        ----------
         min_l : int
             Minimum sequence lenght, was 8, 16 or 32 in the paper
         fuzziness : float
@@ -186,9 +185,8 @@ class LubyBenchmark(AbstractBenchmark):
             Environment seed
 
         Returns:
-        -------
-        env : LubyEnv
-            Luby environment
+        --------
+        LubyEnv: Luby Environment
         """
         self.config = objdict(LUBY_DEFAULTS.copy())
         self.config.min_steps = min_l

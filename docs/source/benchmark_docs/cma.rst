@@ -1,7 +1,7 @@
 .. _cma:
 
 ==========================
-The PyCMA CMA-ES Benchmark
+The CMA-ES Benchmark
 ==========================
 
 | **Task:** control the step size and algorithm components of CMA-ES on BBOB functions

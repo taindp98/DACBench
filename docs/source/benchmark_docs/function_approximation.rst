@@ -26,10 +26,10 @@ which fine control over the instance distribution is required.
 *The Sigmoid benchmark was constructed by Biedenkapp et al. for the paper `"Dynamic Algorithm Configuration: Foundation of a New Meta-Algorithmic Framework" <https://www.tnt.uni-hannover.de/papers/data/1432/20-ECAI-DAC.pdf>`_ at ECAI 2020* and later extended to include multiple function classes and importance weights.
 
 
-.. automodule:: dacbench.benchmarks.sigmoid_benchmark
+.. automodule:: dacbench.benchmarks.function_approximation_benchmark
     :members:
     :show-inheritance:
 
-.. automodule:: dacbench.envs.sigmoid
+.. automodule:: dacbench.envs.function_approximation
     :members:
     :show-inheritance:

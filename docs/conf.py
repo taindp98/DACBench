@@ -41,13 +41,12 @@ options = {
     # this is here to exclude the gallery for examples
     "extensions": [
         "myst_parser",
+        "sphinx.ext.napoleon", 
         "sphinx.ext.autodoc",
         "sphinx.ext.viewcode",
-        "sphinx.ext.napoleon",  # Enables to understand NumPy docstring
-        # "numpydoc",
         "sphinx.ext.autosummary",
         "sphinx.ext.autosectionlabel",
-        "sphinx_autodoc_typehints",
+        #"sphinx_autodoc_typehints",
         "sphinx.ext.doctest",
     ],
 }

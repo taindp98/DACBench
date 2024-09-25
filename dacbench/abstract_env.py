@@ -166,9 +166,8 @@ class AbstractEnv(ABC, gym.Env):
         """Pre-step function for step count and cutoff.
 
         Returns:
-        -------
-        bool
-            End of episode
+        --------
+        bool: End of episode
 
         """
         truncated = False
@@ -234,7 +233,7 @@ class AbstractEnv(ABC, gym.Env):
             Action to take
 
         Returns:
-        -------
+        --------
         state
             Environment state
         reward
@@ -259,7 +258,7 @@ class AbstractEnv(ABC, gym.Env):
             Seed for the environment
 
         Returns:
-        -------
+        --------
         state
             Environment state
         info: dict
@@ -272,10 +271,8 @@ class AbstractEnv(ABC, gym.Env):
         """Return instance ID.
 
         Returns:
-        -------
-        int
-            ID of current instance
-
+        --------
+        int: ID of current instance
         """
         return self.inst_id
 
@@ -283,10 +280,8 @@ class AbstractEnv(ABC, gym.Env):
         """Return instance set.
 
         Returns:
-        -------
-        list
-            List of instances
-
+        --------
+        list: List of instances
         """
         return self.instance_set
 
@@ -294,10 +289,8 @@ class AbstractEnv(ABC, gym.Env):
         """Return current instance.
 
         Returns:
-        -------
-        type flexible
-            Currently used instance
-
+        --------
+        type flexible: Currently used instance
         """
         return self.instance
 
@@ -489,9 +482,8 @@ class AbstractMADACEnv(AbstractEnv):
         """Get current step data.
 
         Returns:
-        -------
+        --------
         np.array, float, bool, bool, dict
-
         """
         return (
             self.observation,

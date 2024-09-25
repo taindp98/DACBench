@@ -87,9 +87,8 @@ class ToySGDBenchmark(AbstractBenchmark):
         """Return SGDEnv env with current configuration.
 
         Returns:
-        -------
-        SGDEnv
-            SGD environment
+        --------
+        ToySGDEnv: ToySGD environment
         """
         if "instance_set" not in self.config:
             self.read_instance_set()

@@ -406,9 +406,8 @@ class TheoryEnv(AbstractEnv):
         The observation space will then be created
 
         Returns:
-        -------
-            Two int values, e.g., 1, np.inf
-
+        --------
+        Two int values, e.g., 1, np.inf
         """
         return 0, np.inf
 
@@ -416,10 +415,8 @@ class TheoryEnv(AbstractEnv):
         """Resets env.
 
         Returns:
-        -------
-        numpy.array
-            Environment state
-
+        --------
+        numpy.array: Environment state
         """
         if options is None:
             options = {}
@@ -475,10 +472,8 @@ class TheoryEnv(AbstractEnv):
             action to execute
 
         Returns:
-        -------
-            state, reward, terminated, truncated, info
-            np.array, float, bool, bool, dict
-
+        --------
+        np.array, float, bool, bool, dict: state, reward, terminated, truncated, info
         """
         truncated = super().step_()
 
@@ -592,10 +587,8 @@ class TheoryEnv(AbstractEnv):
         No additional cleanup necessary
 
         Returns:
-        -------
-        bool
-            Closing confirmation
-
+        --------
+        bool: Closing confirmation
         """
         return True
 

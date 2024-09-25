@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 def load_logs(log_file: Path) -> list[dict]:
     """Loads the logs from a jsonl written by any logger.
-
     The result is the list of dicts in the format:
     {
         'instance': 0,
@@ -33,7 +32,7 @@ def load_logs(log_file: Path) -> list[dict]:
             'step': [step1, step2, ..., stepn],
         }
         ...
-    }
+    }.
 
     Parameters
     ----------
@@ -41,9 +40,8 @@ def load_logs(log_file: Path) -> list[dict]:
         The path to the log file
 
     Returns:
-    -------
+    --------
     [Dict, ...]
-
     """
     with open(log_file) as f:
         return list(map(json.loads, f))
@@ -60,9 +58,8 @@ def split(predicate: Callable, iterable: Iterable) -> tuple[list, list]:
         the iterable to split
 
     Returns:
-    -------
+    --------
     (positives, negatives)
-
     """
     positives, negatives = [], []
 
@@ -74,7 +71,6 @@ def split(predicate: Callable, iterable: Iterable) -> tuple[list, list]:
 
 def flatten_log_entry(log_entry: dict) -> list[dict]:
     """Transforms a log entry.
-
     From:
     {
         'step': 0,
@@ -87,13 +83,12 @@ def flatten_log_entry(log_entry: dict) -> list[dict]:
     [
         { 'step': 0,'episode': 2, 'value': 34,},
         { 'step': 0,'episode': 2, 'value': 45,}
-    ]
+    ].
 
     Parameters
     ----------
     log_entry: Dict
         A log entry
-
     """
     dict_entries, top_level_entries = split(
         lambda item: isinstance(item[1], dict), log_entry.items()
@@ -114,9 +109,8 @@ def list_to_tuple(list_: list) -> tuple:
         (nested) list
 
     Returns:
-    -------
+    --------
     (nested) tuple
-
     """
     return tuple(
         list_to_tuple(item) if isinstance(item, list) else item for item in list_
@@ -127,7 +121,6 @@ def log2dataframe(
     logs: list[dict], drop_columns: list[str] | None = None
 ) -> pd.DataFrame:
     """Converts a list of log entries to a pandas dataframe.
-
     Usually used in combination with load_dataframe.
 
     Parameters
@@ -145,9 +138,8 @@ def log2dataframe(
         used in combination with wide=True to reduce NaN values
 
     Returns:
-    -------
+    --------
     dataframe
-
     """
     dataframe = pd.DataFrame(logs)
 
@@ -190,10 +182,8 @@ def instance_mapper(self):
 
 class AbstractLogger(metaclass=ABCMeta):
     """Logger interface.
-
     The logger classes provide a way of writing structured logs as jsonl files and also
     help to track information like current episode, step, time ...
-
     In the jsonl log file each row corresponds to a step.
     """
 
@@ -224,7 +214,6 @@ class AbstractLogger(metaclass=ABCMeta):
             or on close
         episode_write_frequency: int
             see step_write_frequency
-
         """
         self.experiment_name = experiment_name
         self.output_path = output_path
@@ -265,7 +254,6 @@ class AbstractLogger(metaclass=ABCMeta):
         ----------
         env: AbstractEnv
             env to log
-
         """
         self.env = env
 
@@ -290,9 +278,8 @@ class AbstractLogger(metaclass=ABCMeta):
             dir to prepare for logging
 
         Returns:
-        -------
+        --------
         None
-
         """
         log_dir.mkdir(parents=True, exist_ok=True)
         return log_dir
@@ -306,9 +293,8 @@ class AbstractLogger(metaclass=ABCMeta):
             value to check
 
         Returns:
-        -------
+        --------
         bool
-
         """
         if any(isinstance(value, v_type) for v_type in self.valid_types["primitive"]):
             return True
@@ -353,7 +339,6 @@ class AbstractLogger(metaclass=ABCMeta):
             the value must of of a type that is json serializable.
             Currently only {str, int, float, bool, np.number} and
             recursive types of those are supported.
-
         """
 
     @abstractmethod
@@ -364,7 +349,6 @@ class AbstractLogger(metaclass=ABCMeta):
         ----------
         data: dict
             a dict with key-value so that each value is a valid value for log
-
         """
 
     @abstractmethod
@@ -385,7 +369,6 @@ class AbstractLogger(metaclass=ABCMeta):
         space_info:
             a list of column names.
             The length of this list must equal the resulting number of columns.
-
         """
 
 
@@ -423,7 +406,6 @@ class ModuleLogger(AbstractLogger):
             see step_write_frequency
         output_path:
             The path where logged information should be stored
-
         """
         super().__init__(
             experiment_name, output_path, step_write_frequency, episode_write_frequency
@@ -440,10 +422,8 @@ class ModuleLogger(AbstractLogger):
         """Get logfile name.
 
         Returns:
-        -------
-        pathlib.Path
-            the path to the log file of this logger
-
+        --------
+        pathlib.Path: the path to the log file of this logger
         """
         return Path(self.log_file.name)
 
@@ -470,7 +450,6 @@ class ModuleLogger(AbstractLogger):
         ----------
         object
             numpy object to jsonify
-
         """
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -660,12 +639,10 @@ class ModuleLogger(AbstractLogger):
 
 class Logger(AbstractLogger):
     """A logger that manages the creation of the module loggers.
-
     To get a ModuleLogger for you module (e.g. wrapper) call
     module_logger = Logger(...).add_module("my_wrapper").
     From now on  module_logger.log(...) or logger.log(..., module="my_wrapper")
     can be used to log.
-
     The logger module takes care of updating information like episode and step in the
     subloggers. To indicate to the loggers the end of the episode or the next_step
     simple call logger.next_episode() or logger.next_step().
@@ -758,7 +735,7 @@ class Logger(AbstractLogger):
             The module name or Wrapper-Type to create a sub-logger for
 
         Returns:
-        -------
+        --------
         ModuleLogger
 
         """
