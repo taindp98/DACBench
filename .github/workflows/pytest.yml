@@ -30,6 +30,6 @@ jobs:
       - name: Install dependencies
         run:  |
           which python
-          make install-dev
+          uv pip install -e ".[dev, docs, all, example]"
       - name: Run tests with pytest
-        run: make test
+        run: /home/runner/work/DACBench/DACBench/.venv/bin/python -m pytest tests
