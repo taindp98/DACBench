@@ -24,3 +24,4 @@ test/*.json
 *MNIST/raw*
 *raw*
 *cifar-10-batches-py*
+*cifar*.tar.gz
