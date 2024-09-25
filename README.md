@@ -3,8 +3,8 @@
 [![PyPI Version](https://img.shields.io/pypi/v/dacbench.svg)](https://pypi.python.org/pypi/dacbench)
 ![Python](https://img.shields.io/badge/Python-3.10-3776AB)
 ![License](https://img.shields.io/github/license/automl/dacbench)
-[![Test](https://github.com/automl/dacbench/actions/workflows/pytest.yaml/badge.svg)](https://github.com/automl/dacbench/actions/workflows/pytest.yaml)
-[![Doc Status](https://github.com/automl/dacbench/actions/workflows/docs.yaml/badge.svg)](https://github.com/automl/dacbench/actions/workflows/docs.yaml)
+[![Test](https://github.com/automl/dacbench/actions/workflows/pytest.yml/badge.svg)](https://github.com/automl/DACBench/actions/workflows/pytest.yml)
+[![Doc Status](https://github.com/automl/DACBench/actions/workflows/docs.yml/badge.svg)](https://github.com/automl/DACBench/actions/workflows/docs.yml)
 
 DACBench is a benchmark library for Dynamic Algorithm Configuration.
 Its focus is on reproducibility and comparability of different DAC methods as well as easy analysis of the optimization process.
