@@ -1,35 +1,45 @@
+# DACBench: A Benchmark Library for Dynamic Algorithm Configuration
+
+[![PyPI Version](https://img.shields.io/pypi/v/dacbench.svg)](https://pypi.python.org/pypi/dacbench)
+![Python](https://img.shields.io/badge/Python-3.10-3776AB)
+![License](https://img.shields.io/github/license/automl/dacbench)
+[![Test](https://github.com/automl/dacbench/actions/workflows/pytest.yaml/badge.svg)](https://github.com/automl/dacbench/actions/workflows/pytest.yaml)
+[![Doc Status](https://github.com/automl/dacbench/actions/workflows/docs.yaml/badge.svg)](https://github.com/automl/dacbench/actions/workflows/docs.yaml)
+
 DACBench is a benchmark library for Dynamic Algorithm Configuration.
 Its focus is on reproducibility and comparability of different DAC methods as well as easy analysis of the optimization process.
 
 You can try out the basics of DACBench in Colab [here](https://colab.research.google.com/drive/1XQhJM2ErvDMu7eSSWFFEedGdw8GRChIE?usp=sharing) without any installation.
 Our [examples](https://github.com/automl/DACBench/tree/main/examples) in the repository should give you an impression of what you can do with DACBench and 
-our [documentation](https://dacbench.readthedocs.io/) should answer any questions you might have. 
-
-You can find baseline data of static and random policies for a given version of DACBench on our [project site](https://www.tnt.uni-hannover.de/en/datasets/dacbench/).
+our [documentation](https://automl.github.io/DACBench/) should answer any questions you might have. 
 
 
 ## Installation
-We recommend installing DACBench in a virtual environment:
+We recommend installing DACBench in a virtual environment, here with uv:
 
 ```
-conda create -n dacbench python=3.10
-conda activate dacbench
-pip install dacbench
+pip install uv
+uv venv --python 3.10
+source .venv/bin/activate
+uv pip install dacbench
 ```
 
 Instead of using pip, you can also use the GitHub repo directly:
 ```
+pip install uv
 git clone https://github.com/automl/DACBench.git
 cd DACBench
+uv venv --python 3.10
+source .venv/bin/activate
 git submodule update --init --recursive
-pip install .
+make install
 ```
 This command installs the base version of DACBench including the three small surrogate benchmarks and the option to install the FastDownward benchmark.
 For any other benchmark, you may use a singularity container as provided by us (see next section) or install it as an additional dependency. As an example, 
 to install the SGDBenchmark, run:
 
 ```
-pip install dacbench[sgd]
+uv pip install dacbench[sgd]
 ```
 
 To use FastDownward, you first need to build the solver itself. We recommend using
@@ -40,7 +50,7 @@ cmake version 3.10.2. The command is:
 
 You can also install all dependencies like so:
 ```
-pip install dacbench[all,dev,example,docs]
+make install-dev
 ```
 
 ## Containerized Benchmarks
