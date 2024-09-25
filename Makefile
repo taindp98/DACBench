@@ -25,7 +25,7 @@ CTAGS ?= ctags
 PIP ?= uv pip
 MAKE ?= make
 RUFF ?= uvx ruff
-PRECOMMIT ?= pre-commit
+PRECOMMIT ?= uvx pre-commit
 
 DIR := ${CURDIR}
 DIST := ${CURDIR}/dist
