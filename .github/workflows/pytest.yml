@@ -25,8 +25,11 @@ jobs:
       - name: Activate virtualenv
         run: |
           . .venv/bin/activate
+          which python
           echo PATH=$PATH >> $GITHUB_ENV
       - name: Install dependencies
-        run: make install-dev
+        run:  |
+          which python
+          make install-dev
       - name: Run tests with pytest
         run: make test
