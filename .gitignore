@@ -25,3 +25,6 @@ test/*.json
 *raw*
 *cifar-10-batches-py*
 *cifar*.tar.gz
+
+# venvs
+*.lock*
