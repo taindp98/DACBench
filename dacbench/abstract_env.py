@@ -91,7 +91,7 @@ class AbstractEnv(ABC, gym.Env):
         # TODO: use dicts by default for actions and observations
         # The config could change this for RL purposes
         if "config_space" in config:
-            actions = config["config_space"].get_hyperparameters()
+            actions = list(config["config_space"].values())
             action_types = [type(a).__name__ for a in actions]
 
             # Uniform action space

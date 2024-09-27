@@ -268,11 +268,16 @@ def create_model_from_layer_description(model_description_file) -> nn.Sequential
     Returns:
         nn.Sequential: The pytorch model
     """
+    dacbench_path = (
+        Path(__file__).resolve().parent
+        / "../../instance_sets/sgd/"
+        / model_description_file
+    )
     if Path(model_description_file).exists():
         with open(model_description_file) as f:
             layer_specification = json.load(f)
-    elif Path("dacbench/instance_sets/sgd/" + model_description_file).exists():
-        with open("dacbench/instance_sets/sgd/" + model_description_file) as f:
+    elif dacbench_path.exists():
+        with open(dacbench_path) as f:
             layer_specification = json.load(f)
     else:
         raise FileNotFoundError(f"File {model_description_file} not found.")

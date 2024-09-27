@@ -14,6 +14,8 @@ from dacbench import benchmarks
 
 try:
     for b in benchmarks.__all__:
+        if b == "FastDownwardBenchmark":
+            continue
         bench = getattr(benchmarks, b)()
         bench.read_instance_set()
         env_name = b[:-9]

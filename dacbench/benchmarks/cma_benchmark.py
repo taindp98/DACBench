@@ -82,8 +82,8 @@ FUNCTION_NAMES = {
 }
 
 INFO = {
-    "identifier": "ModCMA",
-    "name": "Online Selection of CMA-ES Variants",
+    "identifier": "CMA-ES",
+    "name": "Online Selection of CMA-ES Variants and step-size control",
     "reward": "Negative best function value",
     "state_description": [
         "Generation Size",

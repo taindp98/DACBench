@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Make logger object and add modules for performance & state logging
     logger = Logger(
-        experiment_name="sigmoid_example",
+        experiment_name="function_approximation_example",
         output_path=Path("plotting/data"),
         step_write_frequency=None,
         episode_write_frequency=None,
