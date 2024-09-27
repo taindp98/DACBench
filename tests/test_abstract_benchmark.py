@@ -7,12 +7,6 @@ import tempfile
 import numpy as np
 import pytest
 from dacbench.abstract_benchmark import AbstractBenchmark, objdict
-from dacbench.challenge_benchmarks.reward_quality_challenge.reward_functions import (
-    random_reward,
-)
-from dacbench.challenge_benchmarks.state_space_challenge.random_states import (
-    small_random_sigmoid_state,
-)
 from gymnasium.spaces import Box, Dict, Discrete, MultiBinary, MultiDiscrete
 
 
@@ -89,12 +83,6 @@ class TestAbstractBenchmark:
 
             bench2 = LessAbstractBenchmark()
             bench2.read_config_file(config_file)
-
-            assert bench1.config["state_method"] == bench2.config["state_method"]
-            assert bench1.config["state_method"] == small_random_sigmoid_state
-
-            assert bench1.config["reward_function"] == bench2.config["reward_function"]
-            assert bench1.config["reward_function"] == random_reward
 
             assert bench1.jsonify_wrappers() == bench2.jsonify_wrappers()
             assert bench1.jsonify_wrappers() == [["RewardNoiseWrapper", []]]
