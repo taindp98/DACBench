@@ -21,7 +21,6 @@ Welcome to DACBench's documentation!
  source/benchmark_docs/function_approximation
  source/benchmark_docs/luby
  source/benchmark_docs/toy_sgd
- source/benchmark_docs/fastdownward
  source/benchmark_docs/theory
  source/benchmark_docs/cma
  source/benchmark_docs/sgd

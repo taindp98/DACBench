@@ -2,7 +2,7 @@
 import importlib
 import warnings
 
-from dacbench.envs.fast_downward import FastDownwardEnv
+# from dacbench.envs.fast_downward import FastDownwardEnv
 from dacbench.envs.function_approximation import (
     FunctionApproximationEnv,
     FunctionApproximationInstance,
@@ -17,7 +17,7 @@ __all__ = [
     "luby_gen",
     "FunctionApproximationEnv",
     "FunctionApproximationInstance",
-    "FastDownwardEnv",
+    #   "FastDownwardEnv",
     "ToySGDEnv",
     "ToySGDInstance",
     "TheoryEnv",

@@ -31,11 +31,5 @@ jobs:
         run:  |
           git submodule update --init --recursive
           uv pip install -e ".[dev, docs, all, example]"
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v2
-        with:
-          cmake-version: '3.10.2'
-      - name: Build fast-downward
-        run: ./dacbench/envs/rl-plan/fast-downward/build.py
       - name: Run tests with pytest
         run: /home/runner/work/DACBench/DACBench/.venv/bin/python -m pytest tests

@@ -34,18 +34,12 @@ source .venv/bin/activate
 git submodule update --init --recursive
 make install
 ```
-This command installs the base version of DACBench including the three small surrogate benchmarks and the option to install the FastDownward benchmark.
+This command installs the base version of DACBench including the three small surrogate benchmarks.
 For any other benchmark, you may use a singularity container as provided by us (see next section) or install it as an additional dependency. As an example, 
 to install the SGDBenchmark, run:
 
 ```
 uv pip install dacbench[sgd]
-```
-
-To use FastDownward, you first need to build the solver itself. We recommend using
-cmake version 3.10.2. The command is:
-```
-./dacbench/envs/rl-plan/fast-downward/build.py
 ```
 
 You can also install all dependencies like so:

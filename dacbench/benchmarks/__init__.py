@@ -2,7 +2,7 @@
 import importlib
 import warnings
 
-from dacbench.benchmarks.fast_downward_benchmark import FastDownwardBenchmark
+# from dacbench.benchmarks.fast_downward_benchmark import FastDownwardBenchmark
 from dacbench.benchmarks.function_approximation_benchmark import (
     FunctionApproximationBenchmark,
 )
@@ -13,7 +13,7 @@ __all__ = [
     "LubyBenchmark",
     "FunctionApproximationBenchmark",
     "ToySGDBenchmark",
-    "FastDownwardBenchmark",
+    #    "FastDownwardBenchmark",
 ]
 
 modcma_spec = importlib.util.find_spec("modcma")
