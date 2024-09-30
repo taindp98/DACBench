@@ -3,8 +3,8 @@ import os
 import unittest
 import pytest
 
-from dacbench.benchmarks import FastDownwardBenchmark
-from dacbench.envs import FastDownwardEnv
+#from dacbench.benchmarks import FastDownwardBenchmark
+#from dacbench.envs import FastDownwardEnv
 
 
 @pytest.mark.skip(reason="FD issues locally and remote make testing hard")
