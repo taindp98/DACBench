@@ -29,7 +29,9 @@ jobs:
           echo PATH=$PATH >> $GITHUB_ENV
       - name: Install dependencies
         run:  |
-          which python
+          git submodule update --init --recursive
           uv pip install -e ".[dev, docs, all, example]"
+      - name: Build fast-downward
+        run: ./dacbench/envs/rl-plan/fast-downward/build.py
       - name: Run tests with pytest
         run: /home/runner/work/DACBench/DACBench/.venv/bin/python -m pytest tests

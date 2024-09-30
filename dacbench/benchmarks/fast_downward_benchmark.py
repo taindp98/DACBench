@@ -130,9 +130,9 @@ class FastDownwardBenchmark(AbstractBenchmark):
                 if (f.endswith((".pddl", ".sas"))) and not f.startswith("domain"):
                     p = Path(root) / f
                     if f.endswith(".pddl"):
-                        index = p.split("/")[-1].split(".")[0]
+                        index = p.parts[-1].split(".")[0]
                     else:
-                        index = p.split("/")[-2]
+                        index = p.parts[-2]
                     index = int(re.sub("[^0-9]", "", index))
                     instances[index] = p
         if len(instances) == 0:
@@ -141,14 +141,14 @@ class FastDownwardBenchmark(AbstractBenchmark):
                 if (f.endswith((".pddl", ".sas"))) and not f.startswith("domain"):
                     p = Path(path) / f
                     if f.endswith(".pddl"):
-                        index = p.split("/")[-1].split(".")[0]
+                        index = p.parts[-1].split(".")[0]
                     else:
-                        index = p.split("/")[-2]
+                        index = p.parts[-2]
                     index = re.sub("[^0-9]", "", index)
                     instances[index] = p
         self.config[keyword] = instances
 
-        if instances[next(iter(instances.keys()))].endswith(".pddl"):
+        if instances[next(iter(instances.keys()))].parts[-1].endswith("pddl"):
             self.config.domain_file = Path(path) / "/domain.pddl"
 
     def set_heuristics(self, heuristics):

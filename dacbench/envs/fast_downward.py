@@ -346,13 +346,13 @@ class FastDownwardEnv(AbstractEnv):
         if not self.socket:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.settimeout(10)
+            self.socket.settimeout(60)
             self.socket.bind((self.host, self.port))
 
         if self.fd:
             self.fd.terminate()
 
-        if self.instance.endswith(".pddl"):
+        if self.instance.parts[-1].endswith(".pddl"):
             command = [
                 "python3",
                 f"{self.fd_path}",
