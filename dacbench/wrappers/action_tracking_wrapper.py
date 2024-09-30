@@ -1,3 +1,7 @@
+"""Wrapper for action frequency."""
+
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
@@ -9,15 +13,14 @@ current_palette = list(sb.color_palette())
 
 
 class ActionFrequencyWrapper(Wrapper):
-    """
-    Wrapper to action frequency.
+    """Wrapper to action frequency.
 
-    Includes interval mode that returns frequencies in lists of len(interval) instead of one long list.
+    Includes interval mode that returns frequencies in lists of len(interval)
+    instead of one long list.
     """
 
     def __init__(self, env, action_interval=None, logger=None):
-        """
-        Initialize wrapper.
+        """Initialize wrapper.
 
         Parameters
         ----------
@@ -29,7 +32,7 @@ class ActionFrequencyWrapper(Wrapper):
             logger to write to
 
         """
-        super(ActionFrequencyWrapper, self).__init__(env)
+        super().__init__(env)
         self.action_interval = action_interval
         self.overall_actions = []
         if self.action_interval:
@@ -39,8 +42,7 @@ class ActionFrequencyWrapper(Wrapper):
         self.logger = logger
 
     def __setattr__(self, name, value):
-        """
-        Set attribute in wrapper if available and in env if not.
+        """Set attribute in wrapper if available and in env if not.
 
         Parameters
         ----------
@@ -66,15 +68,14 @@ class ActionFrequencyWrapper(Wrapper):
             setattr(self.env, name, value)
 
     def __getattribute__(self, name):
-        """
-        Get attribute value of wrapper if available and of env if not.
+        """Get attribute value of wrapper if available and of env if not.
 
         Parameters
         ----------
         name : str
             Attribute to get
 
-        Returns
+        Returns:
         -------
         value
             Value of given name
@@ -93,66 +94,68 @@ class ActionFrequencyWrapper(Wrapper):
         ]:
             return object.__getattribute__(self, name)
 
-        else:
-            return getattr(self.env, name)
+        return getattr(self.env, name)
 
     def step(self, action):
-        """
-        Execute environment step and record state.
+        """Execute environment step and record state.
 
         Parameters
         ----------
         action : int
             action to execute
 
-        Returns
+        Returns:
         -------
         np.array, float, bool, dict
             state, reward, done, metainfo
 
         """
         state, reward, terminated, truncated, info = self.env.step(action)
-        self.overall_actions.append(action)
+        log_action = action
+        if isinstance(log_action, dict):
+            log_action = list(log_action.values())
+            for i in range(len(log_action)):
+                if isinstance(log_action[i], list | np.ndarray):
+                    log_action[i] = log_action[i][0]
+
+        self.overall_actions.append(log_action)
         if self.logger is not None:
             self.logger.log_space("action", action)
 
         if self.action_interval:
             if len(self.current_actions) < self.action_interval:
-                self.current_actions.append(action)
+                self.current_actions.append(log_action)
             else:
                 self.action_intervals.append(self.current_actions)
-                self.current_actions = [action]
+                self.current_actions = [log_action]
         return state, reward, terminated, truncated, info
 
     def get_actions(self):
-        """
-        Get state progression.
+        """Get state progression.
 
-        Returns
+        Returns:
         -------
         np.array or np.array, np.array
             all states or all states and interval sorted states
 
         """
         if self.action_interval:
-            complete_intervals = self.action_intervals + [self.current_actions]
+            complete_intervals = [*self.action_intervals, self.current_actions]
             return self.overall_actions, complete_intervals
 
-        else:
-            return self.overall_actions
+        return self.overall_actions
 
     def render_action_tracking(self):
-        """
-        Render action progression.
+        """Render action progression.
 
-        Returns
+        Returns:
         -------
         np.array
             RBG data of action tracking
 
         """
 
-        def plot_single(ax=None, index=None, title=None, x=False, y=False):
+        def plot_single(ax=None, index=None, x=False, y=False):
             if ax is None:
                 plt.xlabel("Step")
                 plt.ylabel("Action value")
@@ -209,21 +212,19 @@ class ActionFrequencyWrapper(Wrapper):
                     ax.legend(loc="upper left")
             return p, p2
 
+        action_size_border = 5
         if self.action_space_type == spaces.Discrete:
             figure = plt.figure(figsize=(12, 6))
             canvas = FigureCanvas(figure)
             p, p2 = plot_single()
             canvas.draw()
-        elif self.action_space_type == spaces.Dict:
+        elif self.action_space_type in (spaces.Dict, spaces.Tuple):
             raise NotImplementedError
 
-        elif self.action_space_type == spaces.Tuple:
-            raise NotImplementedError
-
-        elif (
-            self.action_space_type == spaces.MultiDiscrete
-            or self.action_space_type == spaces.MultiBinary
-            or self.action_space_type == spaces.Box
+        elif self.action_space_type in (
+            spaces.MultiDiscrete,
+            spaces.MultiBinary,
+            spaces.Box,
         ):
             if self.action_space_type == spaces.MultiDiscrete:
                 action_size = len(self.env.action_space.nvec)
@@ -236,7 +237,7 @@ class ActionFrequencyWrapper(Wrapper):
                 figure = plt.figure(figsize=(12, 6))
                 canvas = FigureCanvas(figure)
                 p, p2 = plot_single()
-            elif action_size < 5:
+            elif action_size < action_size_border:
                 dim = 1
                 figure, axarr = plt.subplots(action_size)
             else:
@@ -251,14 +252,13 @@ class ActionFrequencyWrapper(Wrapper):
                 x = False
                 if i % dim == dim - 1:
                     x = True
-                if action_size < 5:
+                if action_size < action_size_border:
                     p, p2 = plot_single(axarr[i], i, y=True, x=x)
                 else:
                     y = i % action_size // dim == 0
                     p, p2 = plot_single(axarr[i % dim, i // dim], i, x=x, y=y)
             canvas.draw()
         width, height = figure.get_size_inches() * figure.get_dpi()
-        img = np.fromstring(canvas.tostring_rgb(), dtype="uint8").reshape(
+        return np.fromstring(canvas.tostring_rgb(), dtype="uint8").reshape(
             int(height), int(width), 3
         )
-        return img

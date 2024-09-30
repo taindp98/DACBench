@@ -1,4 +1,6 @@
-"""This is strongly guided and partially copy from:https://github.com/automl/HPOBench/blob/master/hpobench/container/client_abstract_benchmark.py"""
+"""This is strongly guided and partially copy from:https://github.com/automl/HPOBench/blob/master/hpobench/container/client_abstract_benchmark.py."""
+
+from __future__ import annotations
 
 import argparse
 import logging
@@ -6,13 +8,12 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import TYPE_CHECKING
 from uuid import uuid1
 
 import Pyro4
 import Pyro4.naming
 
-from dacbench.abstract_agent import AbstractDACBenchAgent
 from dacbench.abstract_benchmark import AbstractBenchmark
 from dacbench.argument_parsing import PathType
 from dacbench.container.container_utils import wait_for_unixsocket
@@ -20,6 +21,9 @@ from dacbench.container.remote_env import (
     RemoteEnvironmentClient,
     RemoteEnvironmentServer,
 )
+
+if TYPE_CHECKING:
+    from dacbench.abstract_agent import AbstractDACBenchAgent
 
 # Needed in order to combine event loops of name_server and daemon
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -44,7 +48,7 @@ sys.excepthook = Pyro4.util.excepthook
 # Number of tries to connect to server
 MAX_TRIES = 5
 
-SOCKET_PATH = Path("/tmp/dacbench/sockets")
+SOCKET_PATH = Path("/tmp/dacbench/sockets")  # noqa: S108
 
 
 @Pyro4.expose
@@ -56,7 +60,7 @@ class RemoteRunnerServer:
         self.benchmark = None
         self.pyro_demon = pyro_demon
 
-    def start(self, config: str, benchmark: Tuple[str, str]):
+    def start(self, config: str, benchmark: tuple[str, str]):
         """Start server."""
         benchmark = AbstractBenchmark.import_from(*benchmark)
 
@@ -69,8 +73,7 @@ class RemoteRunnerServer:
         # set up logger and stuff
 
         self.env = RemoteEnvironmentServer(env)
-        uri = self.pyro_demon.register(self.env)
-        return uri
+        return self.pyro_demon.register(self.env)
 
 
 class RemoteRunner:
@@ -81,16 +84,15 @@ class RemoteRunner:
     def __init__(
         self,
         benchmark: AbstractBenchmark,
-        container_name: str = None,
-        container_source: Optional[str] = None,
+        container_name: str | None = None,
+        container_source: str | None = None,
         container_tag: str = "latest",
-        env_str: Optional[str] = "",
-        bind_str: Optional[str] = "",
-        gpu: Optional[bool] = False,
+        env_str: str | None = "",
+        bind_str: str | None = "",
+        gpu: bool | None = False,
         socket_id=None,
     ):
-        """
-        Runner for containers.
+        """Runner for containers.
 
         Parameters
         ----------
@@ -99,19 +101,23 @@ class RemoteRunner:
         container_name : str
             name for container
         container_source : Optional[str]
-            Path to the container. Either local path or url to a hosting platform, e.g. singularity hub.
+            Path to the container. Either local path or url to a hosting platform,
+            e.g. singularity hub.
         container_tag : str
-            Singularity containers are specified by an address as well as a container tag. We use the tag as a version
-            number. By default the tag is set to `latest`, which then pulls the latest container from the container
-            source. The tag-versioning allows the users to rerun an experiment, which was performed with an older
-            container version. Take a look in the container_source to find the right tag to use.
+            Singularity containers are specified by an address as well as a
+            container tag. We use the tag as a version number. By default the tag is
+            set to `latest`, which then pulls the latest container from the container
+            source. The tag-versioning allows the users to rerun an experiment, which
+            was performed with an older container version. Take a look in the
+            container_source to find the right tag to use.
         bind_str : Optional[str]
             Defaults to ''. You can bind further directories into the container.
             This string have the form src[:dest[:opts]].
             For more information, see https://sylabs.io/guides/3.5/user-guide/bind_paths_and_mounts.html
         env_str : Optional[str]
-            Defaults to ''. Sometimes you want to pass a parameter to your container. You can do this by setting some
-            environmental variables. The list should follow the form VAR1=VALUE1,VAR2=VALUE2,..
+            Defaults to ''. Sometimes you want to pass a parameter to your container.
+            You can do this by setting some environmental variables.
+            The list should follow the form VAR1=VALUE1,VAR2=VALUE2,..
             For more information, see
             https://sylabs.io/guides/3.5/user-guide/environment_and_metadata.html#environment-overview
         gpu : bool
@@ -121,16 +127,18 @@ class RemoteRunner:
             1) Start the benchmark on a random generated socket id.
             2) Create a proxy connection to the container via this socket id.
 
-            When no `socket_id` is given, a new container is started. The `socket_id` (address) of this containers is
+            When no `socket_id` is given, a new container is started.
+            The `socket_id` (address) of this containers is
             stored in the class attribute Benchmark.socket_id
 
-            When a `socket_id` is given, instead of creating a new container, connect only to the container that is
-            reachable at `socket_id`. Make sure that a container is already running with the address `socket_id`.
+            When a `socket_id` is given, instead of creating a new container,
+            connect only to the container that is reachable at `socket_id`.
+            Make sure that a container is already running with the address `socket_id`.
 
         """
         logger.info(f"Logging level: {logger.level}")
-        # connect to already running server if a socket_id is given. In this case, skip the init of
-        # the benchmark
+        # connect to already running server if a socket_id is given.
+        # In this case, skip the init of the benchmark
         self.__proxy_only = socket_id is not None
         self.__socket_path = SOCKET_PATH
 
@@ -165,8 +173,7 @@ class RemoteRunner:
         return Path(SOCKET_PATH) / f"{socket_id}.unixsock"
 
     def __start_server(self, env_str, bind_str, gpu):
-        """
-        Starts container and the pyro server.
+        """Starts container and the pyro server.
 
         Parameters
         ----------
@@ -253,11 +260,12 @@ class RemoteRunner:
         self,
         benchmark: AbstractBenchmark,
         container_name: str,
-        container_source: Union[str, Path],
+        container_source: str | Path,
         container_tag: str,
     ):
         """Load benchmark from recipe."""
-        # see for implementation guideline hpobench  hpobench/container/client_abstract_benchmark.py
+        # see for implementation guideline hpobench
+        # hpobench/container/client_abstract_benchmark.py
         # in the end self.container_source should contain the path to the file to run
 
         logger.warning("Only container source is used")
@@ -281,8 +289,7 @@ class RemoteRunnerServerFactory:
     def create(self):
         """Get server."""
         remote_runner_server = RemoteRunnerServer(pyro_demon=self.pyro_demon)
-        remote_runner_server_uri = daemon.register(remote_runner_server)
-        return remote_runner_server_uri
+        return daemon.register(remote_runner_server)
 
     def __call__(self):
         """Make."""
@@ -302,7 +309,10 @@ if __name__ == "__main__":
         required=False,
         default=None,
         dest="socket",
-        help="The path to a exiting socket to run the name server on. If none a new socket unixsocket is created.",
+        help=(
+            "The path to a exiting socket to run the name server on. "
+            "If none a new socket unixsocket is created."
+        ),
     )
 
     args = parser.parse_args()

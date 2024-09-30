@@ -1,0 +1,11 @@
+id,dataset,model_type,model_kwargs,optimizer,optimizer_params,seed,batch_size,train_validation_ratio,fraction_of_dataset
+0,CIFAR10,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,Adam,,0,32,0.8,1
+1,MNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,RMSprop,,4294967295,1024,0.8,1
+2,CIFAR10,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,Adam,,0,32,0.8,1
+3,FashionMNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,SGD,,4294967295,1024,0.8,1
+4,MNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,AdamW,,0,32,0.8,1
+5,CIFAR10,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,Adam,,4294967295,32,0.8,1
+6,MNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,SGD,,0,32,0.8,1
+7,FashionMNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,AdamW,,0,1024,0.8,1
+8,CIFAR10,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,Adam,,4294967295,32,0.8,1
+9,MNIST,from_torchhub,'pytorch/vision:v0.10.0-resnet18-False,SGD,,4294967295,1024,0.8,1

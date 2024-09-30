@@ -28,12 +28,12 @@ The same goes for the observations:
 
 .. code-block:: python
 
-    from dacbench.benchmarks import SigmoidBenchmark
+    from dacbench.benchmarks import FunctionApproximationBenchmark
 
     def new_obs(env):
         return env.remaining_budget
 
-    bench = SigmoidBenchmark()
+    bench = FunctionApproximationBenchmark()
     bench.config.state_method = new_obs
     modified_benchmark = bench.get_environment()
 

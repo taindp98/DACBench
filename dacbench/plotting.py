@@ -1,4 +1,6 @@
-from typing import List, Tuple
+"""Plotting helper."""
+
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -8,15 +10,15 @@ sns.set_style("darkgrid")
 
 
 def space_sep_upper(column_name: str) -> str:
-    """
-    Separates strings at underscores into headings. Used to generate labels from logging names.
+    """Separates strings at underscores into headings.
+    Used to generate labels from logging names.
 
     Parameters
     ----------
     column_name : str
         Name to generate label for
 
-    Returns
+    Returns:
     -------
     str
 
@@ -30,11 +32,11 @@ def generate_global_step(
     data: pd.DataFrame,
     x_column: str = "global_step",
     x_label_columns: str = ["episode", "step"],
-) -> Tuple[pd.DataFrame, str, List[str]]:
-    """
-    Add a global_step column which enumerate all step over all episodes.
+) -> tuple[pd.DataFrame, str, list[str]]:
+    """Add a global_step column which enumerate all step over all episodes.
 
-    Returns the altered data, a data frame containing mapping between global_step, x_column and x_label_columns.
+    Returns the altered data, a data frame containing mapping between global_step,
+    x_column and x_label_columns.
 
     Often used in combination with add_multi_level_ticks.
 
@@ -47,7 +49,7 @@ def generate_global_step(
     x_label_columns: [str, ...]
         the name and hierarchical order of the columns (default ['episode', 'step']
 
-    Returns
+    Returns:
     -------
     (data, plot_index, x_column, x_label_columns)
 
@@ -67,20 +69,21 @@ def generate_global_step(
 def add_multi_level_ticks(
     grid: sns.FacetGrid, plot_index: pd.DataFrame, x_column: str, x_label_columns: str
 ) -> None:
-    """
-    Expects a FacedGrid with global_step (x_column) as x-axis and replaces the tick labels to match format episode:step.
+    """Expects a FacedGrid with global_step (x_column) as x-axis
+    and replaces the tick labels to match format episode:step.
 
     E.g. Run with 3 episodes, each of 10 steps. This results in 30 global steps.
     The resulting tick labels could be ['0', '4', '9', '14', '19', '24', '29'].
-    After applying this method they will look like ['0:0', '0:4', '1:0', '1:4', '2:0', '2:4', '3:0', '3:4']
+    After applying this method they will look like
+    ['0:0', '0:4', '1:0', '1:4', '2:0', '2:4', '3:0', '3:4']
 
     Parameters
     ----------
     grid: sns.FacesGrid
         The grid to plot onto
     plot_index: pd.DataFrame
-        The mapping between current tick labels (global step values) and new tick labels joined by ':'.
-        usually the result from generate_global_step
+        The mapping between current tick labels (global step values) and new tick labels
+        joined by ':'. Usually the result from generate_global_step
     x_column: str
         column label to use for looking up tick values
     x_label_columns: [str, ...]
@@ -91,9 +94,11 @@ def add_multi_level_ticks(
         ticks = ax.get_xticks()
         sub_set = plot_index[plot_index[x_column].isin(ticks)]
         new_labels = (
-            sub_set.loc[tick][x_label_columns].tolist()
-            if tick in sub_set.index
-            else (None, None)
+            (
+                sub_set.loc[tick][x_label_columns].tolist()
+                if tick in sub_set.index
+                else (None, None)
+            )
             for tick in ticks
         )
         new_labels = [
@@ -105,18 +110,19 @@ def add_multi_level_ticks(
 def plot(
     plot_function,
     settings: dict,
-    title: str = None,
-    x_label: str = None,
-    y_label: str = None,
+    title: str | None = None,
+    x_label: str | None = None,
+    y_label: str | None = None,
     **kwargs,
 ) -> sns.FacetGrid:
-    """
-    Helper function that creates a FacetGrid.
+    """Helper function that creates a FacetGrid.
 
     1. Updates settings with kwargs (overwrites values)
     2. Plots using plot_function(**settings)
-    3. Set x and y labels of not provided the columns names will converted to pretty strings using space_sep_upper
-    4. Sets title (some times has to be readjusted afterwards especially in case of large plots e.g. multiple rows/cols)
+    3. Set x and y labels of not provided the columns names will converted
+      to pretty strings using space_sep_upper
+    4. Sets title (some times has to be readjusted afterwards especially in
+      case of large plots e.g. multiple rows/cols)
 
     Parameters
     ----------
@@ -133,7 +139,7 @@ def plot(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -159,11 +165,11 @@ def plot(
 def plot_performance(
     data, title=None, x_label=None, y_label=None, **kwargs
 ) -> sns.FacetGrid:
-    """
-    Create a line plot of the performance over episodes.
+    """Create a line plot of the performance over episodes.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Per default the mean performance and and one stddev over all
+    instances and seeds is shown if you want to change this specify a property
+    to map those attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to examples/plotting/performance_plotting.py
@@ -171,7 +177,8 @@ def plot_performance(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     title: str
         Title of the plot (optional)
     x_label: str
@@ -181,7 +188,7 @@ def plot_performance(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -192,16 +199,13 @@ def plot_performance(
         "y": "overall_performance",
         "kind": "line",
     }
-    grid = plot(sns.relplot, settings, title, x_label, y_label, **kwargs)
-
-    return grid
+    return plot(sns.relplot, settings, title, x_label, y_label, **kwargs)
 
 
 def plot_performance_per_instance(
     data, title=None, x_label=None, y_label=None, **args
 ) -> sns.FacetGrid:
-    """
-    Create a bar plot of the mean performance per instance ordered by the performance.
+    """Create bar plot of the mean performance per instance ordered by the performance.
 
     Per default the mean performance seeds is shown if you want to change
     this specify a property to map seed to e.g. col='seed'.
@@ -212,7 +216,8 @@ def plot_performance_per_instance(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     title: str
         Title of the plot (optional)
     x_label: str
@@ -222,7 +227,7 @@ def plot_performance_per_instance(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -251,11 +256,11 @@ def plot_step_time(
     y_label=None,
     **args,
 ) -> sns.FacetGrid:
-    """
-    Create a line plot showing the measured time per step.
+    """Create a line plot showing the measured time per step.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Per default the mean performance and and one stddev over all instances
+    and seeds is shown if you want to change this specify a property to map
+    those attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to examples/plotting/time_plotting.py
@@ -263,9 +268,11 @@ def plot_step_time(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     show_global_step: bool
-        If to show the global_step (step enumerated over all episodes) or Episode:Step. (False default)
+        If to show the global_step (step enumerated over all episodes)
+        or Episode:Step. (False default)
     interval: int
         Interval in number of steps to average over. (default = 1)
     title: str
@@ -277,7 +284,7 @@ def plot_step_time(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -310,11 +317,11 @@ def plot_step_time(
 def plot_episode_time(
     data, title=None, x_label=None, y_label=None, **kargs
 ) -> sns.FacetGrid:
-    """
-    Create a line plot showing the measured time per episode.
+    """Create a line plot showing the measured time per episode.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Per default the mean performance and and one stddev over all instances
+    and seeds is shown if you want to change this specify a property to map
+    those attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to examples/plotting/time_plotting.py
@@ -322,7 +329,8 @@ def plot_episode_time(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     title: str
         Title of the plot (optional)
     x_label: str
@@ -332,7 +340,7 @@ def plot_episode_time(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -344,9 +352,7 @@ def plot_episode_time(
         "kind": "line",
     }
 
-    grid = plot(sns.relplot, settings, title, x_label, y_label, **kargs)
-
-    return grid
+    return plot(sns.relplot, settings, title, x_label, y_label, **kargs)
 
 
 def plot_action(
@@ -358,15 +364,16 @@ def plot_action(
     y_label=None,
     **kargs,
 ):
-    """
-    Create a line plot showing actions over time.
+    """Create a line plot showing actions over time.
 
-    Please be aware that action spaces can be quite large and the plots can become quite messy (and take some time)
-    if you try plot all dimensions at once. It is therefore recommended to select a subset of columns before running the
-    plot method.
+    Please be aware that spaces can be quite large and the plots can become quite messy
+    (and take some time) if you try plot all dimensions at once.
+    It is therefore recommended to select a subset of columns before running the
+    plot method. Especially for dict spaces.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Per default the mean performance and and one stddev over all instances
+    and seeds is shown if you want to change this specify a property to map those
+    attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to examples/plotting/action_plotting.py
@@ -374,9 +381,11 @@ def plot_action(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     show_global_step: bool
-        If to show the global_step (step enumerated over all episodes) or Episode:Step. (False default)
+        If to show the global_step (step enumerated over all episodes)
+        or Episode:Step. (False default)
     interval: int
         Interval in number of steps to average over. (default = 1)
     title: str
@@ -388,7 +397,7 @@ def plot_action(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -407,15 +416,19 @@ def plot_state(
     y_label=None,
     **kargs,
 ):
-    """
-    Create a line plot showing state over time.
+    """Create a line plot showing state over time.
 
-    Please be aware that state can be quite large and the plots can become quite messy (and take some time)
-    if you try plot all dimensions at once. It is therefore recommended to select a subset of columns before running the
-    plot method. Especially for dict state spaces.
+    -----
+    Create a line plot showing space over time.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Please be aware that spaces can be quite large and the plots can become quite messy
+    (and take some time) if you try plot all dimensions at once.
+    It is therefore recommended to select a subset of columns before running the
+    plot method. Especially for dict spaces.
+
+    Per default the mean performance and and one stddev over all instances
+    and seeds is shown if you want to change this specify a property to map those
+    attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to examples/plotting/state_plotting.py
@@ -423,9 +436,11 @@ def plot_state(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading using
+        log2dataframe(logs, wide=True)
     show_global_step: bool
-        If to show the global_step (step enumerated over all episodes) or Episode:Step. (False default)
+        If to show the global_step (step enumerated over all episodes)
+        or Episode:Step. (False default)
     interval: int
         Interval in number of steps to average over. (default = 1)
     title: str
@@ -437,7 +452,7 @@ def plot_state(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -457,15 +472,16 @@ def plot_space(
     y_label=None,
     **args,
 ) -> sns.FacetGrid:
-    """
-    Create a line plot showing space over time.
+    """Create a line plot showing space over time.
 
-    Please be aware that spaces can be quite large and the plots can become quite messy (and take some time)
-    if you try plot all dimensions at once. It is therefore recommended to select a subset of columns before running the
+    Please be aware that spaces can be quite large and the plots can become quite messy
+    (and take some time) if you try plot all dimensions at once.
+    It is therefore recommended to select a subset of columns before running the
     plot method. Especially for dict spaces.
 
-    Per default the mean performance and and one stddev over all instances and seeds is shown if you want to change
-    this specify a property to map those attributes to e.g hue='seed' or/and col='instance'.
+    Per default the mean performance and and one stddev over all instances
+    and seeds is shown if you want to change this specify a property to map those
+    attributes to e.g hue='seed' or/and col='instance'.
     For more details see: https://seaborn.pydata.org/generated/seaborn.relplot.html
 
     For examples refer to
@@ -476,11 +492,13 @@ def plot_space(
     Parameters
     ----------
     data: pd.DataFrame
-        Dataframe resulting from logging and loading using log2dataframe(logs, wide=True)
+        Dataframe resulting from logging and loading
+        using log2dataframe(logs, wide=True)
     space_column_name : str
         Name of the column in the space which to plot
     show_global_step: bool
-        If to show the global_step (step enumerated over all episodes) or Episode:Step. (False default)
+        If to show the global_step (step enumerated over all episodes)
+        or Episode:Step. (False default)
     interval: int
         Interval in number of steps to average over. (default = 1)
     title: str
@@ -492,7 +510,7 @@ def plot_space(
     kwargs:
         Keyword arguments to overwrite default settings.
 
-    Returns
+    Returns:
     -------
     sns.FacedGrid
 
@@ -505,8 +523,8 @@ def plot_space(
     y_label_name = space_column_name
 
     if number_of_space_entries > 1:
-        # if we have more than one space dims we reshape the dataframe in order to be able to control the plots behavior
-        # per dimension
+        # if we have more than one space dims we reshape the dataframe
+        # in order to be able to control the plots behavior per dimension
         data = pd.wide_to_long(
             data,
             stubnames=[space_column_name],
@@ -526,7 +544,7 @@ def plot_space(
     if interval > 1:
         data["interval"] = data[x_column] // interval
         group_columns = list(
-            data.columns.drop(x_label_columns + [x_column, space_column_name])
+            data.columns.drop([*x_label_columns, x_column, space_column_name])
         )
         data = data.groupby(group_columns).agg(
             {x_column: "min", space_column_name: "mean"}

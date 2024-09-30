@@ -1,5 +1,6 @@
-from dacbench.runner import run_dacbench
+"""Example for running the dacbench."""
 from dacbench.agents import RandomAgent
+from dacbench.runner import run_dacbench
 
 
 # Function to create an agent fulfilling the DACBench Agent interface

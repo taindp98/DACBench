@@ -1,5 +1,6 @@
-"""DACBench: a benchmark library for Dynamic Algorithm Configuration"""
-__version__ = "0.2.1"
+"""DACBench: a benchmark library for Dynamic Algorithm Configuration."""
+
+__version__ = "0.3.0"
 __contact__ = "automl.org"
 
 from dacbench.abstract_benchmark import AbstractBenchmark
@@ -13,6 +14,8 @@ from dacbench import benchmarks
 
 try:
     for b in benchmarks.__all__:
+        if b == "FastDownwardBenchmark":
+            continue
         bench = getattr(benchmarks, b)()
         bench.read_instance_set()
         env_name = b[:-9]
@@ -21,7 +24,8 @@ try:
             entry_point=f"dacbench.envs:{env_name}Env",
             kwargs={"config": bench.config},
         )
-except:
+except:  # noqa: E722
     print(
-        "DACBench Gym registration failed - make sure you have all dependencies installed and their instance sets in the right path!"
+        "DACBench Gym registration failed - make sure you have all dependencies "
+        "installed and their instance sets in the right path!"
     )

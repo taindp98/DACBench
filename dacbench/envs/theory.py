@@ -1,3 +1,7 @@
+"""Theory Environment."""
+
+from __future__ import annotations
+
 import logging
 import uuid
 from collections import deque
@@ -12,14 +16,18 @@ from dacbench import AbstractEnv
 class BinaryProblem:
     """An abstract class for an individual in binary representation."""
 
-    def __init__(self, n, rng=np.random.default_rng()):
+    def __init__(self, n, rng=None):
         """Init problem."""
+        if rng is None:
+            rng = np.random.default_rng()
         self.data = rng.choice([True, False], size=n)
         self.n = n
         self.fitness = self.eval()
 
-    def initialise_with_fixed_number_of_bits(self, k, rng=np.random.default_rng()):
+    def initialise_with_fixed_number_of_bits(self, k, rng=None):
         """Init with given number of bits."""
+        if rng is None:
+            rng = np.random.default_rng()
         nbits = self.data.sum()
         if nbits < k:
             ids = rng.choice(
@@ -30,26 +38,22 @@ class BinaryProblem:
 
     def is_optimal(self):
         """Get is_optimal flag."""
-        pass
 
     def get_optimal(self):
         """Get optimum."""
-        pass
 
     def eval(self):
         """Evaluate fitness."""
-        pass
 
     def get_fitness_after_flipping(self, locs):
-        """
-        Calculate the change in fitness after flipping the bits at positions locs
+        """Calculate the change in fitness after flipping the bits at positions locs.
 
         Parameters
         ----------
         locs: 1d-array
             positions where bits are flipped
 
-        Returns
+        Returns:
         -------
             objective after flipping
 
@@ -57,8 +61,7 @@ class BinaryProblem:
         raise NotImplementedError
 
     def get_fitness_after_crossover(self, xprime, locs_x, locs_xprime):
-        """
-        Calculate fitness of the child aftering being crossovered with xprime.
+        """Calculate fitness of the child aftering being crossovered with xprime.
 
         Parameters
         ----------
@@ -69,7 +72,7 @@ class BinaryProblem:
         locs_xprime: : 1d boolean/integer array
             positions where we change to xprime's bits
 
-        Returns
+        Returns:
         -------
             fitness of the new individual after crossover
 
@@ -77,15 +80,14 @@ class BinaryProblem:
         raise NotImplementedError
 
     def flip(self, locs):
-        """
-        Flip the bits at position indicated by locs.
+        """Flip the bits at position indicated by locs.
 
         Parameters
         ----------
         locs: 1d-array
             positions where bits are flipped
 
-        Returns
+        Returns:
         -------
             the new individual after the flip
 
@@ -96,8 +98,8 @@ class BinaryProblem:
         return child
 
     def combine(self, xprime, locs_xprime):
-        """
-        Combine (crossover) self and xprime by taking xprime's bits at locs_xprime and self's bits at other positions.
+        """Combine (crossover) self and xprime by taking xprime's bits at locs_xprime
+        and self's bits at other positions.
 
         Parameters
         ----------
@@ -108,7 +110,7 @@ class BinaryProblem:
         locs_xprime: : 1d boolean/integer array
             positions where we change to xprime's bits
 
-        Returns
+        Returns:
         -------
             the new individual after the crossover
 
@@ -118,30 +120,31 @@ class BinaryProblem:
         child.eval()
         return child
 
-    def mutate(self, p, n_childs, rng=np.random.default_rng()):
-        """
-        Draw l ~ binomial(n, p), l>0.
+    def mutate(self, p, n_childs, rng=None):
+        """Draw l ~ binomial(n, p), l>0.
 
         Generate n_childs children by flipping exactly l bits
 
-        Returns
+        Returns:
         -------
             the best child (maximum fitness), its fitness and number of evaluations used
 
         """
+        if rng is None:
+            rng = np.random.default_rng()
         assert p >= 0
 
         if p == 0:
             return self, self.fitness, 0
 
-        l = 0
-        while l == 0:
-            l = rng.binomial(self.n, p)
+        length = 0
+        while length == 0:
+            length = rng.binomial(self.n, p)
 
         best_obj = -1
         best_locs = None
-        for i in range(n_childs):
-            locs = rng.choice(self.n, size=l, replace=False)
+        for _i in range(n_childs):
+            locs = rng.choice(self.n, size=length, replace=False)
             obj = self.get_fitness_after_flipping(locs)
             if obj > best_obj:
                 best_locs = locs
@@ -151,21 +154,22 @@ class BinaryProblem:
 
         return best_child, best_child.fitness, n_childs
 
-    def mutate_rls(self, l, rng=np.random.default_rng()):
-        """
-        Generate a child by flipping exactly l bits.
+    def mutate_rls(self, length, rng=None):
+        """Generate a child by flipping exactly l bits.
 
-        Returns
+        Returns:
         -------
             child, its fitness
 
         """
-        assert l >= 0
+        if rng is None:
+            rng = np.random.default_rng()
+        assert length >= 0
 
-        if l == 0:
+        if length == 0:
             return self, self.fitness, 0
 
-        locs = rng.choice(self.n, size=l, replace=False)
+        locs = rng.choice(self.n, size=length, replace=False)
         child = self.flip(locs)
 
         return child, child.fitness, 1
@@ -177,12 +181,12 @@ class BinaryProblem:
         n_childs,
         include_xprime=True,
         count_different_inds_only=True,
-        rng=np.random.default_rng(),
+        rng=None,
     ):
-        """
-        Crossover operation in population.
+        """Crossover operation in population.
 
-        Crossover operator: for each bit, taking value from x with probability p and from self with probability 1-p
+        Crossover operator: for each bit, taking value from x with probability p
+        and from self with probability 1-p
 
         Parameters
         ----------
@@ -200,43 +204,40 @@ class BinaryProblem:
             random number generator
 
         """
+        if rng is None:
+            rng = np.random.default_rng()
         assert p <= 1
 
         if p == 0:
             if include_xprime:
                 return xprime, xprime.fitness, 0
-            else:
-                return self, self.fitness, 0
+            return self, self.fitness, 0
 
-        if include_xprime:
-            best_obj = xprime.fitness
-        else:
-            best_obj = -1
+        best_obj = xprime.fitness if include_xprime else -1
         best_locs = None
 
         n_evals = 0
         ls = rng.binomial(self.n, p, size=n_childs)
-        for l in ls:
+        for l in ls:  # noqa: E741
             locs_xprime = rng.choice(self.n, l, replace=False)
             locs_x = np.full(self.n, True)
             locs_x[locs_xprime] = False
             obj = self.get_fitness_after_crossover(xprime, locs_x, locs_xprime)
 
-            if (obj != self.fitness) and (obj != xprime.fitness):
-                n_evals += 1
-            elif (
-                not np.array_equal(xprime.data[locs_xprime], self.data[locs_xprime])
-            ) and (not np.array_equal(self.data[locs_x], xprime.data[locs_x])):
+            if (
+                obj not in (self.fitness, xprime.fitness)
+                or (
+                    not np.array_equal(xprime.data[locs_xprime], self.data[locs_xprime])
+                )
+                and (not np.array_equal(self.data[locs_x], xprime.data[locs_x]))
+            ):
                 n_evals += 1
 
             if obj > best_obj:
                 best_obj = obj
                 best_locs = locs_xprime
 
-        if best_locs is not None:
-            child = self.combine(xprime, best_locs)
-        else:
-            child = xprime
+        child = self.combine(xprime, best_locs) if best_locs is not None else xprime
 
         if not count_different_inds_only:
             n_evals = n_childs
@@ -245,16 +246,17 @@ class BinaryProblem:
 
 
 class LeadingOne(BinaryProblem):
-    """
-    An individual for LeadingOne problem.
+    """An individual for LeadingOne problem.
 
     The aim is to maximise the number of leading (and consecutive) 1 bits in the string
     """
 
-    def __init__(self, n, rng=np.random.default_rng(), initObj=None):
-        """Make individual"""
+    def __init__(self, n, rng=None, initObj=None):  # noqa: N803
+        """Make individual."""
+        if rng is None:
+            rng = np.random.default_rng()
         if initObj is None:
-            super(LeadingOne, self).__init__(n=n, rng=rng)
+            super().__init__(n=n, rng=rng)
         else:
             self.data = rng.choice([True, False], size=n)
             self.data[: int(initObj)] = True
@@ -284,15 +286,14 @@ class LeadingOne(BinaryProblem):
         min_loc = locs.min()
         if min_loc < self.fitness:
             return min_loc
-        elif min_loc > self.fitness:
+        if min_loc > self.fitness:
             return self.fitness
-        else:
-            old_fitness = self.fitness
-            self.data[locs] = ~self.data[locs]
-            new_fitness = self.eval()
-            self.data[locs] = ~self.data[locs]
-            self.fitness = old_fitness
-            return new_fitness
+        old_fitness = self.fitness
+        self.data[locs] = ~self.data[locs]
+        new_fitness = self.eval()
+        self.data[locs] = ~self.data[locs]
+        self.fitness = old_fitness
+        return new_fitness
 
     def get_fitness_after_crossover(self, xprime, locs_x, locs_xprime):
         """Return fitness after crossover."""
@@ -306,15 +307,14 @@ HISTORY_LENGTH = 5
 
 
 class TheoryEnv(AbstractEnv):
-    """
-    Environment for RLS with step size.
+    """Environment for RLS with step size.
 
-    Current assumption: we only consider (1+1)-RLS, so there's only one parameter to tune (r)
+    Current assumption: we only consider (1+1)-RLS,
+    so there's only one parameter to tune (r)
     """
 
     def __init__(self, config, test_env=False) -> None:
-        """
-        Initialize TheoryEnv.
+        """Initialize TheoryEnv.
 
         Parameters
         ----------
@@ -324,7 +324,7 @@ class TheoryEnv(AbstractEnv):
             whether to use test mode
 
         """
-        super(TheoryEnv, self).__init__(config)
+        super().__init__(config)
         self.logger = logging.getLogger(self.__str__())
 
         self.test_env = test_env
@@ -365,14 +365,16 @@ class TheoryEnv(AbstractEnv):
                 )
             elif (
                 "_{t-" in var_name
-            ):  # TODO: this implementation only allow accessing history of r, but not delta_f(x), optimal_k, etc
+            ):  # TODO: this implementation only allow accessing history of r,
+                # but not delta_f(x), optimal_k, etc
                 k = int(
                     var_name.split("_{t-")[1][:-1]
                 )  # get the number in _{t-<number>}
                 name = var_name.split("_{t-")[0]  # get the variable name (r, f(x), etc)
                 self.state_functions.append(
-                    lambda his="history_" + name: vars(self)[his][-(k + 1)]
-                )  # the last element is the value at the current time step, so we have to go one step back to access the history
+                    lambda k=k, his="history_" + name: vars(self)[his][-(k + 1)]
+                )  # the last element is the value at the current time step,
+                # so we have to go one step back to access the history
             elif var_name == "f(x)":
                 self.state_functions.append(lambda: self.history_fx[-1])
             elif var_name == "delta_f(x)":
@@ -387,10 +389,7 @@ class TheoryEnv(AbstractEnv):
                 raise Exception("Error: invalid state variable name: " + var_name)
 
         # the random generator used by RLS
-        if "seed" in config:
-            seed = config.seed
-        else:
-            seed = None
+        seed = config.seed if "seed" in config else None
         if "seed" in self.instance:
             seed = self.instance.seed
         self.seed(seed)
@@ -400,30 +399,28 @@ class TheoryEnv(AbstractEnv):
         if "outdir" in config:
             self.outdir = config.outdir + "/" + str(uuid.uuid4())
 
-    def get_obs_domain_from_name(var_name):
-        """
-        Get default lower and upperbound of a observation variable based on its name.
+    @staticmethod
+    def get_obs_domain_from_name(var_name):  # noqa: ARG004
+        """Get default lower and upperbound of a observation variable based on its name.
 
         The observation space will then be created
 
-        Returns
-        -------
-            Two int values, e.g., 1, np.inf
-
+        Returns:
+        --------
+        Two int values, e.g., 1, np.inf
         """
         return 0, np.inf
 
-    def reset(self, seed=None, options={}):
-        """
-        Resets env.
+    def reset(self, seed=None, options=None):
+        """Resets env.
 
-        Returns
-        -------
-        numpy.array
-            Environment state
-
+        Returns:
+        --------
+        numpy.array: Environment state
         """
-        super(TheoryEnv, self).reset_(seed)
+        if options is None:
+            options = {}
+        super().reset_(seed)
 
         # current problem size (n) & evaluation limit (max_evals)
         self.n = self.instance.size
@@ -467,26 +464,23 @@ class TheoryEnv(AbstractEnv):
         return np.asarray([f() for f in self.state_functions])
 
     def step(self, action):
-        """
-        Execute environment step.
+        """Execute environment step.
 
         Parameters
         ----------
         action : Box
             action to execute
 
-        Returns
-        -------
-            state, reward, terminated, truncated, info
-            np.array, float, bool, bool, dict
-
+        Returns:
+        --------
+        np.array, float, bool, bool, dict: state, reward, terminated, truncated, info
         """
-        truncated = super(TheoryEnv, self).step_()
+        truncated = super().step_()
 
         fitness_before_update = self.x.fitness
 
         # get r
-        if isinstance(action, np.ndarray) or isinstance(action, list):
+        if isinstance(action, list | np.ndarray):
             assert len(action) == 1
             r = action[0]
         else:
@@ -497,7 +491,8 @@ class TheoryEnv(AbstractEnv):
         if r < 1 or r > self.n:
             self.logger.info(f"WARNING: r={r} is out of bound")
 
-            # if we're in the training phase, we return a large negative reward and stop the episode
+            # if we're in the training phase, we return a large negative reward
+            # and stop the episode
             if self.test_env is False:
                 terminated = True
                 n_evals = 0
@@ -550,24 +545,21 @@ class TheoryEnv(AbstractEnv):
 
         returned_info = {"msg": "", "values": {}}
         if terminated or truncated:
-            if hasattr(self, "env_type"):
-                msg = "Env " + self.env_type + ". "
-            else:
-                msg = ""
+            msg = "Env " + self.env_type + ". " if hasattr(self, "env_type") else ""
             msg += (
-                "Episode done: n=%d; obj=%d; init_obj=%d; evals=%d; max_evals=%d; steps=%d; r_min=%.1f; r_max=%.1f; r_mean=%.1f; R=%.4f"
-                % (
-                    self.n,
-                    self.x.fitness,
-                    self.init_obj,
-                    self.total_evals,
-                    self.max_evals,
-                    self.c_step,
-                    min(self.log_r),
-                    max(self.log_r),
-                    sum(self.log_r) / len(self.log_r),
-                    sum(self.log_reward),
-                )
+                "Episode done: n=%d; obj=%d; init_obj=%d; evals=%d; max_evals=%d; "
+                "steps=%d; r_min=%.1f; r_max=%.1f; r_mean=%.1f; R=%.4f"
+            ) % (
+                self.n,
+                self.x.fitness,
+                self.init_obj,
+                self.total_evals,
+                self.max_evals,
+                self.c_step,
+                min(self.log_r),
+                max(self.log_r),
+                sum(self.log_r) / len(self.log_r),
+                sum(self.log_reward),
             )
             # self.logger.info(msg)
             returned_info["msg"] = msg
@@ -590,16 +582,13 @@ class TheoryEnv(AbstractEnv):
         return self.get_state(), reward, truncated, terminated, returned_info
 
     def close(self) -> bool:
-        """
-        Close Env.
+        """Close Env.
 
         No additional cleanup necessary
 
-        Returns
-        -------
-        bool
-            Closing confirmation
-
+        Returns:
+        --------
+        bool: Closing confirmation
         """
         return True
 
@@ -609,7 +598,7 @@ class TheoryEnvDiscrete(TheoryEnv):
 
     def __init__(self, config, test_env=False):
         """Init env."""
-        super(TheoryEnvDiscrete, self).__init__(config, test_env)
+        super().__init__(config, test_env)
         assert (
             "action_choices" in config
         ), "Error: action_choices must be specified in benchmark's config"
@@ -617,14 +606,14 @@ class TheoryEnvDiscrete(TheoryEnv):
             self.action_space, gym.spaces.Discrete
         ), "Error: action space must be discrete"
         assert self.action_space.n == len(config["action_choices"]), (
-            "Error: action space's size (%d) must be equal to the len(action_choices) (%d)"
-            % (self.action_space.n, len(config["action_choices"]))
-        )
+            "Error: action space's size (%d) must be equal "
+            "to the len(action_choices) (%d)"
+        ) % (self.action_space.n, len(config["action_choices"]))
         self.action_choices = config["action_choices"]
 
     def step(self, action):
         """Take step."""
-        if isinstance(action, np.ndarray) or isinstance(action, list):
+        if isinstance(action, list | np.ndarray):
             assert len(action) == 1
             action = action[0]
-        return super(TheoryEnvDiscrete, self).step(self.action_choices[action])
+        return super().step(self.action_choices[action])

@@ -1,6 +1,11 @@
-import os
+"""Fast Downward Benchmark."""
 
-import ConfigSpace as CS
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import ConfigSpace as CS  # noqa: N817
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
@@ -14,7 +19,7 @@ HEURISTICS = [
 
 DEFAULT_CFG_SPACE = CS.ConfigurationSpace()
 HEURISTIC = CSH.CategoricalHyperparameter(name="heuristic", choices=["toy1", "toy2"])
-DEFAULT_CFG_SPACE.add_hyperparameter(HEURISTIC)
+DEFAULT_CFG_SPACE.add(HEURISTIC)
 
 INFO = {
     "identifier": "FastDownward",
@@ -59,8 +64,8 @@ FD_DEFAULTS = objdict(
         "max_rand_steps": 0,
         "instance_set_path": "../instance_sets/fast_downward/train",
         "test_set_path": "../instance_sets/fast_downward/test",
-        "fd_path": os.path.dirname(os.path.abspath(__file__))
-        + "/../envs/rl-plan/fast-downward/fast-downward.py",
+        "fd_path": Path(__file__).resolve().parent
+        / "/../envs/rl-plan/fast-downward/fast-downward.py",
         "parallel": True,
         "fd_logs": None,
         "benchmark_info": INFO,
@@ -69,20 +74,17 @@ FD_DEFAULTS = objdict(
 
 
 class FastDownwardBenchmark(AbstractBenchmark):
-    """
-    Benchmark with default configuration & relevant functions for Sigmoid
-    """
+    """Benchmark with default configuration & relevant functions for Sigmoid."""
 
     def __init__(self, config_path=None, config=None):
-        """
-        Initialize FD Benchmark
+        """Initialize FD Benchmark.
 
         Parameters
         -------
         config_path : str
             Path to config file (optional)
         """
-        super(FastDownwardBenchmark, self).__init__(config_path, config)
+        super().__init__(config_path, config)
         if not self.config:
             self.config = objdict(FD_DEFAULTS.copy())
 
@@ -91,22 +93,18 @@ class FastDownwardBenchmark(AbstractBenchmark):
                 self.config[key] = FD_DEFAULTS[key]
 
     def get_environment(self):
-        """
-        Return Luby env with current configuration
+        """Return Luby env with current configuration.
 
-        Returns
+        Returns:
         -------
         LubyEnv
             Luby environment
         """
-        if "instance_set" not in self.config.keys():
+        if "instance_set" not in self.config:
             self.read_instance_set()
 
         # Read test set if path is specified
-        if (
-            "test_set" not in self.config.keys()
-            and "test_set_path" in self.config.keys()
-        ):
+        if "test_set" not in self.config and "test_set_path" in self.config:
             self.read_instance_set(test=True)
 
         env = FastDownwardEnv(self.config)
@@ -116,57 +114,45 @@ class FastDownwardBenchmark(AbstractBenchmark):
         return env
 
     def read_instance_set(self, test=False):
-        """
-        Read paths of instances from config into list
-        """
+        """Read paths of instances from config into list."""
         instances = {}
         if test:
-            path = (
-                os.path.dirname(os.path.abspath(__file__))
-                + "/"
-                + self.config.test_set_path
-            )
+            path = Path(__file__).resolve().parent / self.config.test_set_path
             keyword = "test_set"
         else:
-            path = (
-                os.path.dirname(os.path.abspath(__file__))
-                + "/"
-                + self.config.instance_set_path
-            )
+            path = Path(__file__).resolve().parent / self.config.instance_set_path
             keyword = "instance_set"
+
         import re
 
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for f in files:
-                if (f.endswith(".pddl") or f.endswith(".sas")) and not f.startswith(
-                    "domain"
-                ):
-                    p = os.path.join(root, f)
+                if (f.endswith((".pddl", ".sas"))) and not f.startswith("domain"):
+                    p = Path(root) / f
                     if f.endswith(".pddl"):
-                        index = p.split("/")[-1].split(".")[0]
+                        index = p.parts[-1].split(".")[0]
                     else:
-                        index = p.split("/")[-2]
+                        index = p.parts[-2]
                     index = int(re.sub("[^0-9]", "", index))
                     instances[index] = p
         if len(instances) == 0:
             for f in os.listdir(path):
                 f = f.strip()
-                if (f.endswith(".pddl") or f.endswith(".sas")) and not f.startswith(
-                    "domain"
-                ):
-                    p = os.path.join(path, f)
+                if (f.endswith((".pddl", ".sas"))) and not f.startswith("domain"):
+                    p = Path(path) / f
                     if f.endswith(".pddl"):
-                        index = p.split("/")[-1].split(".")[0]
+                        index = p.parts[-1].split(".")[0]
                     else:
-                        index = p.split("/")[-2]
+                        index = p.parts[-2]
                     index = re.sub("[^0-9]", "", index)
                     instances[index] = p
         self.config[keyword] = instances
 
-        if instances[list(instances.keys())[0]].endswith(".pddl"):
-            self.config.domain_file = os.path.join(path + "/domain.pddl")
+        if instances[next(iter(instances.keys()))].parts[-1].endswith("pddl"):
+            self.config.domain_file = Path(path) / "/domain.pddl"
 
     def set_heuristics(self, heuristics):
+        """Function to set the heuristic."""
         self.config.heuristics = heuristics
         self.config.action_space_args = [len(heuristics)]
         self.config.observation_space_args = [
@@ -175,15 +161,14 @@ class FastDownwardBenchmark(AbstractBenchmark):
         ]
 
     def get_benchmark(self, seed=0):
-        """
-        Get published benchmark
+        """Get published benchmark.
 
         Parameters
         -------
         seed : int
             Environment seed
 
-        Returns
+        Returns:
         -------
         env : FastDownwardEnv
             FD environment
@@ -192,5 +177,4 @@ class FastDownwardBenchmark(AbstractBenchmark):
         self.read_instance_set()
         self.read_instance_set(test=True)
         self.config.seed = seed
-        env = FastDownwardEnv(self.config)
-        return env
+        return FastDownwardEnv(self.config)

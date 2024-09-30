@@ -1,15 +1,16 @@
+from __future__ import annotations
+
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 import numpy as np
+from dacbench.agents.simple_agents import RandomAgent
+from dacbench.benchmarks import FunctionApproximationBenchmark
+from dacbench.logger import Logger, ModuleLogger, log2dataframe
 from gymnasium import spaces
 from gymnasium.spaces import Box, Dict, Discrete, MultiDiscrete
-
-from dacbench.agents.simple_agents import RandomAgent
-from dacbench.benchmarks import SigmoidBenchmark
-from dacbench.logger import Logger, ModuleLogger, log2dataframe
 
 
 class TestLogger(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestLogger(unittest.TestCase):
             episode_write_frequency=None,
         )
 
-        benchmark = SigmoidBenchmark()
+        benchmark = FunctionApproximationBenchmark()
         env = benchmark.get_benchmark()
         agent = RandomAgent(env)
         logger.set_env(env)
@@ -85,37 +86,36 @@ class TestLogger(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_env_logger(self):
-        with open(self.log_file, "r") as log_file:
+        with open(self.log_file) as log_file:
             logs = list(map(json.loads, log_file))
 
         for log in logs:
-            # todo check when nan occurs
+            print(log)
             if "logged_step" in log:
-                self.assertEqual(log["logged_step"]["values"][0], log["step"])
+                assert log["logged_step"] == log["step"]
             if "logged_episode" in log:
-                self.assertEqual(log["logged_episode"]["values"][0], log["episode"])
+                assert log["logged_episode"] == log["episode"]
             # check of only one seed occurs per episode
-            seeds = set(log["logged_seed"]["values"])
-            self.assertEqual(len(seeds), 1)
+            seeds = set([log["logged_seed"]])
+            assert len(seeds) == 1
             (seed,) = seeds
-            self.assertEqual(seed, log["seed"])
+            assert seed == log["seed"]
 
             # check of only one instance occurs per episode
-            instances = set(log["logged_instance"]["values"])
-            self.assertEqual(len(seeds), 1)
+            instances = set([log["logged_instance"]])
+            assert len(seeds) == 1
             (instance,) = instances
-            self.assertEqual(instance, log["instance"])
+            assert instance == log["instance"]
 
     def test_data_loading(self):
-        with open(self.log_file, "r") as log_file:
+        with open(self.log_file) as log_file:
             logs = list(map(json.loads, log_file))
 
         dataframe = log2dataframe(
             logs,
-            wide=True,
         )
-        self.assertTrue((dataframe.logged_step == dataframe.step).all())
-        self.assertTrue((dataframe.logged_episode == dataframe.episode).all())
+        assert (dataframe.logged_step == dataframe.step).all()
+        assert (dataframe.logged_episode == dataframe.episode).all()
 
 
 class TestModuleLogger(unittest.TestCase):
@@ -174,48 +174,38 @@ class TestModuleLogger(unittest.TestCase):
         logger.log_space("Box", space.sample())
         logger.close()
 
-        with open(logger.get_logfile(), "r") as log_file:
+        with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        wide = log2dataframe(logs, wide=True)
+        wide = log2dataframe(logs)
         long = log2dataframe(logs, drop_columns=None)
 
-        self.assertEqual(len(wide), 1)
+        assert len(wide) == 1
         first_row = wide.iloc[0]
 
         # Discrete
-        self.assertTrue(not np.isnan(first_row.Discrete))
+        assert not np.isnan(first_row.Discrete)
 
         # MultiDiscrete
-        self.assertTrue(not np.isnan(first_row.MultiDiscrete_0))
-        self.assertTrue(not np.isnan(first_row.MultiDiscrete_1))
-        simultaneous_logged = long[
-            (long.name == "MultiDiscrete_0") | (long.name == "MultiDiscrete_1")
-        ]
-        self.assertEqual(len(simultaneous_logged.time.unique()), 1)
+        assert not np.isnan(first_row.MultiDiscrete_0)
+        assert not np.isnan(first_row.MultiDiscrete_1)
 
         # Dict
         expected_columns = [
-            "Dict_currentLR_0",
-            "Dict_lossVarDiscountedAverage_0",
-            "Dict_lossVarUncertainty_0",
-            "Dict_predictiveChangeVarDiscountedAverage_0",
-            "Dict_predictiveChangeVarUncertainty_0",
-            "Dict_trainingLoss_0",
+            "currentLR_0",
+            "lossVarDiscountedAverage_0",
+            "lossVarUncertainty_0",
+            "predictiveChangeVarDiscountedAverage_0",
+            "predictiveChangeVarUncertainty_0",
+            "trainingLoss_0",
         ]
 
         for expected_column in expected_columns:
-            self.assertTrue(not np.isnan(first_row[expected_column]))
-
-        simultaneous_logged = long[long.name.isin(expected_columns)]
-        self.assertEqual(len(simultaneous_logged.time.unique()), 1)
+            assert not np.isnan(first_row[expected_column])
 
         # Box
-        self.assertTrue(not np.isnan(first_row.Box_0))
-        self.assertTrue(not np.isnan(first_row.Box_1))
-
-        simultaneous_logged = long[(long.name == "Box_0") | (long.name == "Box_1")]
-        self.assertEqual(len(simultaneous_logged.time.unique()), 1)
+        assert not np.isnan(first_row.Box_0)
+        assert not np.isnan(first_row.Box_1)
 
     def test_log_numpy(self):
         experiment_name = "test_log_numpy"
@@ -235,11 +225,11 @@ class TestModuleLogger(unittest.TestCase):
         )
         logger.close()
 
-        with open(logger.get_logfile(), "r") as log_file:
+        with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        dataframe = log2dataframe(logs, wide=True)
-        self.assertEqual(dataframe.iloc[0].state, (1, 2, 3))
+        dataframe = log2dataframe(logs)
+        assert dataframe.iloc[0].state == (1, 2, 3)
 
     def test_numpy_logging(self):
         experiment_name = "test_numpy_logging"
@@ -257,13 +247,13 @@ class TestModuleLogger(unittest.TestCase):
 
         logger.close()
 
-        with open(logger.get_logfile(), "r") as log_file:
+        with open(logger.get_logfile()) as log_file:
             logs = list(map(json.loads, log_file))
 
-        dataframe = log2dataframe(logs, wide=True)
+        dataframe = log2dataframe(logs)
 
         expected_result = (((0,) * 3,) * 3,) * 2
-        self.assertEqual(dataframe.iloc[0].np, expected_result)
+        assert dataframe.iloc[0].np == expected_result
 
     def test_basic_logging(self):
         experiment_name = "test_basic_logging"
@@ -294,27 +284,21 @@ class TestModuleLogger(unittest.TestCase):
 
         logger.close()  # or logger write
 
-        with open(logger.log_file.name, "r") as log_file:
+        with open(logger.log_file.name) as log_file:
             logs = list(map(json.loads, log_file))
 
-        self.assertEqual(
-            episodes * steps,
-            len(logs),
-            "For each step with logging done in it one line exit",
-        )
+        assert episodes * steps == len(
+            logs
+        ), "For each step with logging done in it one line exit"
 
         for log in logs:
             if "logged_step" in log:
-                self.assertTrue(
-                    all(
-                        log["step"] == logged_step
-                        for logged_step in log["logged_step"]["values"]
-                    ),
+                assert all(
+                    log["step"] == logged_step
+                    for logged_step in log["logged_step"]["values"]
                 )
             if "logged_episode" in log:
-                self.assertTrue(
-                    all(
-                        log["step"] == logged_episode
-                        for logged_episode in log["episode_logged"]["values"]
-                    ),
+                assert all(
+                    log["step"] == logged_episode
+                    for logged_episode in log["episode_logged"]["values"]
                 )

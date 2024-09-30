@@ -1,3 +1,7 @@
+"""Wrapper for performance tracking."""
+
+from __future__ import annotations
+
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -10,10 +14,10 @@ current_palette = list(sb.color_palette())
 
 
 class PerformanceTrackingWrapper(Wrapper):
-    """
-    Wrapper to track episode performance.
+    """Wrapper to track episode performance.
 
-    Includes interval mode that returns performance in lists of len(interval) instead of one long list.
+    Includes interval mode that returns performance in lists of len(interval)
+    instead of one long list.
     """
 
     def __init__(
@@ -23,8 +27,7 @@ class PerformanceTrackingWrapper(Wrapper):
         track_instance_performance=True,
         logger=None,
     ):
-        """
-        Initialize wrapper.
+        """Initialize wrapper.
 
         Parameters
         ----------
@@ -38,7 +41,7 @@ class PerformanceTrackingWrapper(Wrapper):
             logger to write to
 
         """
-        super(PerformanceTrackingWrapper, self).__init__(env)
+        super().__init__(env)
         self.performance_interval = performance_interval
         self.overall_performance = []
         self.episode_performance = 0
@@ -47,13 +50,12 @@ class PerformanceTrackingWrapper(Wrapper):
             self.current_performance = []
         self.track_instances = track_instance_performance
         if self.track_instances:
-            self.instance_performances = defaultdict(lambda: [])
+            self.instance_performances = defaultdict(list)
 
         self.logger = logger
 
     def __setattr__(self, name, value):
-        """
-        Set attribute in wrapper if available and in env if not.
+        """Set attribute in wrapper if available and in env if not.
 
         Parameters
         ----------
@@ -83,15 +85,14 @@ class PerformanceTrackingWrapper(Wrapper):
             setattr(self.env, name, value)
 
     def __getattribute__(self, name):
-        """
-        Get attribute value of wrapper if available and of env if not.
+        """Get attribute value of wrapper if available and of env if not.
 
         Parameters
         ----------
         name : str
             Attribute to get
 
-        Returns
+        Returns:
         -------
         value
             Value of given name
@@ -114,19 +115,17 @@ class PerformanceTrackingWrapper(Wrapper):
         ]:
             return object.__getattribute__(self, name)
 
-        else:
-            return getattr(self.env, name)
+        return getattr(self.env, name)
 
     def step(self, action):
-        """
-        Execute environment step and record performance.
+        """Execute environment step and record performance.
 
         Parameters
         ----------
         action : int
             action to execute
 
-        Returns
+        Returns:
         -------
         np.array, float, bool, dict
             state, reward, done, metainfo
@@ -150,38 +149,36 @@ class PerformanceTrackingWrapper(Wrapper):
                     self.performance_intervals.append(self.current_performance)
                     self.current_performance = [self.episode_performance]
             if self.track_instances:
-                key = "".join(str(e) for e in self.env.instance)
+                key = "".join(str(e) for e in self.env.instance.__dict__.values())
                 self.instance_performances[key].append(self.episode_performance)
             self.episode_performance = 0
         return state, reward, terminated, truncated, info
 
     def get_performance(self):
-        """
-        Get state performance.
+        """Get state performance.
 
-        Returns
+        Returns:
         -------
         np.array or np.array, np.array or np.array, dict or np.array, np.arry, dict
             all states or all states and interval sorted states
 
         """
         if self.performance_interval and self.track_instances:
-            complete_intervals = self.performance_intervals + [self.current_performance]
+            complete_intervals = [*self.performance_intervals, self.current_performance]
             return (
                 self.overall_performance,
                 complete_intervals,
                 self.instance_performances,
             )
 
-        elif self.performance_interval:
-            complete_intervals = self.performance_intervals + [self.current_performance]
+        if self.performance_interval:
+            complete_intervals = [*self.performance_intervals, self.current_performance]
             return self.overall_performance, complete_intervals
 
-        elif self.track_instances:
+        if self.track_instances:
             return self.overall_performance, self.instance_performances
 
-        else:
-            return self.overall_performance
+        return self.overall_performance
 
     def render_performance(self):
         """Plot performance."""
@@ -205,6 +202,7 @@ class PerformanceTrackingWrapper(Wrapper):
         for k, i in zip(
             self.instance_performances.keys(),
             np.arange(len(self.instance_performances.keys())),
+            strict=False,
         ):
             ax.bar(str(i), np.mean(self.instance_performances[k]))
         plt.show()

@@ -1,3 +1,7 @@
+"""Wrapper for the state tracking."""
+
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
@@ -9,15 +13,14 @@ current_palette = list(sb.color_palette())
 
 
 class StateTrackingWrapper(Wrapper):
-    """
-    Wrapper to track state changed over time.
+    """Wrapper to track state changed over time.
 
-    Includes interval mode that returns states in lists of len(interval) instead of one long list.
+    Includes interval mode that returns states in lists of len(interval)
+    instead of one long list.
     """
 
     def __init__(self, env, state_interval=None, logger=None):
-        """
-        Initialize wrapper.
+        """Initialize wrapper.
 
         Parameters
         ----------
@@ -29,7 +32,7 @@ class StateTrackingWrapper(Wrapper):
             logger to write to
 
         """
-        super(StateTrackingWrapper, self).__init__(env)
+        super().__init__(env)
         self.state_interval = state_interval
         self.overall_states = []
         if self.state_interval:
@@ -47,8 +50,7 @@ class StateTrackingWrapper(Wrapper):
             )
 
     def __setattr__(self, name, value):
-        """
-        Set attribute in wrapper if available and in env if not.
+        """Set attribute in wrapper if available and in env if not.
 
         Parameters
         ----------
@@ -77,15 +79,14 @@ class StateTrackingWrapper(Wrapper):
             setattr(self.env, name, value)
 
     def __getattribute__(self, name):
-        """
-        Get attribute value of wrapper if available and of env if not.
+        """Get attribute value of wrapper if available and of env if not.
 
         Parameters
         ----------
         name : str
             Attribute to get
 
-        Returns
+        Returns:
         -------
         value
             Value of given name
@@ -106,21 +107,20 @@ class StateTrackingWrapper(Wrapper):
             "logger",
         ]:
             return object.__getattribute__(self, name)
+        return getattr(self.env, name)
 
-        else:
-            return getattr(self.env, name)
+    def reset(self, seed=None, options=None):
+        """Reset environment and record starting state.
 
-    def reset(self):
-        """
-        Reset environment and record starting state.
-
-        Returns
+        Returns:
         -------
         np.array, {}
             state, info
 
         """
-        state, info = self.env.reset()
+        if options is None:
+            options = {}
+        state, info = self.env.reset(seed=seed, options=options)
         self.overall_states.append(state)
         if self.state_interval:
             if len(self.current_states) < self.state_interval:
@@ -131,15 +131,14 @@ class StateTrackingWrapper(Wrapper):
         return state, info
 
     def step(self, action):
-        """
-        Execute environment step and record state.
+        """Execute environment step and record state.
 
         Parameters
         ----------
         action : int
             action to execute
 
-        Returns
+        Returns:
         -------
         np.array, float, bool, dict
             state, reward, done, metainfo
@@ -158,64 +157,53 @@ class StateTrackingWrapper(Wrapper):
         return state, reward, terminated, truncated, info
 
     def get_states(self):
-        """
-        Get state progression.
+        """Get state progression.
 
-        Returns
+        Returns:
         -------
         np.array or np.array, np.array
             all states or all states and interval sorted states
 
         """
         if self.state_interval:
-            complete_intervals = self.state_intervals + [self.current_states]
+            complete_intervals = [*self.state_intervals, self.current_states]
             return self.overall_states, complete_intervals
 
-        else:
-            return self.overall_states
+        return self.overall_states
 
     def render_state_tracking(self):
-        """
-        Render state progression.
+        """Render state progression.
 
-        Returns
+        Returns:
         -------
         np.array
             RBG data of state tracking
 
         """
 
-        def plot_single(ax=None, index=None, title=None, x=False, y=False):
+        def plot_single(ax=None, index=None, x=False, y=False):
             if ax is None:
-                plt.xlabel("Episode")
-                plt.ylabel("State")
-            elif x and y:
-                ax.set_ylabel("State")
-                ax.set_xlabel("Episode")
-            elif x:
-                ax.set_xlabel("Episode")
-            elif y:
-                ax.set_ylabel("State")
+                ax = plt
+                ax.xlabel("Episode")
+                ax.ylabel("State")
+            else:
+                if x:
+                    ax.set_xlabel("Episode")
+                if y:
+                    ax.set_ylabel("State")
 
             if index is not None:
                 ys = [state[index] for state in self.overall_states]
             else:
                 ys = self.overall_states
 
-            if ax is None:
-                p = plt.plot(
-                    np.arange(len(self.overall_states)),
-                    ys,
-                    label="Episode state",
-                    color="g",
-                )
-            else:
-                p = ax.plot(
-                    np.arange(len(self.overall_states)),
-                    ys,
-                    label="Episode state",
-                    color="g",
-                )
+            p = ax.plot(
+                np.arange(len(self.overall_states)),
+                ys,
+                label="Episode state",
+                color="g",
+            )
+
             p2 = None
             if self.state_interval:
                 if index is not None:
@@ -224,40 +212,27 @@ class StateTrackingWrapper(Wrapper):
                         y_ints.append([state[index] for state in interval])
                 else:
                     y_ints = self.state_intervals
-                if ax is None:
-                    p2 = plt.plot(
-                        np.arange(len(self.state_intervals)),
-                        [np.mean(interval) for interval in y_ints],
-                        label="Mean interval state",
-                        color="orange",
-                    )
-                    plt.legend(loc="upper left")
-                else:
-                    p2 = ax.plot(
-                        np.arange(len(self.state_intervals)) * self.state_interval,
-                        [np.mean(interval) for interval in y_ints],
-                        label="Mean interval state",
-                        color="orange",
-                    )
-                    ax.legend(loc="upper left")
+
+                p2 = ax.plot(
+                    np.arange(len(self.state_intervals)) * self.state_interval,
+                    [np.mean(interval) for interval in y_ints],
+                    label="Mean interval state",
+                    color="orange",
+                )
+                ax.legend(loc="upper left")
+
             return p, p2
 
+        state_length_border = 5
         if self.state_type == spaces.Discrete:
             figure = plt.figure(figsize=(20, 20))
             canvas = FigureCanvas(figure)
             p, p2 = plot_single()
             canvas.draw()
-        elif self.state_type == spaces.Dict:
+        elif self.state_type in (spaces.Dict, spaces.Tuple):
             raise NotImplementedError
 
-        elif self.state_type == spaces.Tuple:
-            raise NotImplementedError
-
-        elif (
-            self.state_type == spaces.MultiDiscrete
-            or self.state_type == spaces.MultiBinary
-            or self.state_type == spaces.Box
-        ):
+        elif self.state_type in (spaces.MultiDiscrete, spaces.MultiBinary, spaces.Box):
             if self.state_type == spaces.MultiDiscrete:
                 state_length = len(self.env.observation_space.nvec)
             elif self.state_type == spaces.MultiBinary:
@@ -268,7 +243,7 @@ class StateTrackingWrapper(Wrapper):
                 figure = plt.figure(figsize=(20, 20))
                 canvas = FigureCanvas(figure)
                 p, p2 = plot_single()
-            elif state_length < 5:
+            elif state_length < state_length_border:
                 dim = 1
                 figure, axarr = plt.subplots(state_length)
             else:
@@ -283,7 +258,7 @@ class StateTrackingWrapper(Wrapper):
                 x = False
                 if i % dim == dim - 1:
                     x = True
-                if state_length < 5:
+                if state_length < state_length_border:
                     p, p2 = plot_single(axarr[i], i, y=True, x=x)
                 else:
                     y = i % state_length // dim == 0
@@ -292,7 +267,6 @@ class StateTrackingWrapper(Wrapper):
         else:
             raise ValueError("Unknown state type")
         width, height = figure.get_size_inches() * figure.get_dpi()
-        img = np.fromstring(canvas.tostring_rgb(), dtype="uint8").reshape(
+        return np.fromstring(canvas.tostring_rgb(), dtype="uint8").reshape(
             int(height), int(width), 3
         )
-        return img

@@ -1,19 +1,18 @@
-"""
-Planning environment from
+"""Planning environment from
 "Learning Heuristic Selection with Dynamic Algorithm Configuration"
 by David Speck, André Biedenkapp, Frank Hutter, Robert Mattmüller und Marius Lindauer.
-Original environment authors: David Speck, André Biedenkapp
+Original environment authors: David Speck, André Biedenkapp.
 """
+
+from __future__ import annotations
 
 import os
 import socket
 import subprocess
 import time
-import typing
 from copy import deepcopy
 from enum import Enum
-from os import remove
-from os.path import join as joinpath
+from pathlib import Path
 
 import numpy as np
 
@@ -21,7 +20,7 @@ from dacbench import AbstractEnv
 
 
 class StateType(Enum):
-    """Class to define numbers for state types"""
+    """Class to define numbers for state types."""
 
     RAW = 1
     DIFF = 2
@@ -32,20 +31,17 @@ class StateType(Enum):
 
 
 class FastDownwardEnv(AbstractEnv):
-    """
-    Environment to control Solver Heuristics of FastDownward
-    """
+    """Environment to control Solver Heuristics of FastDownward."""
 
     def __init__(self, config):
-        """
-        Initialize FD Env
+        """Initialize FD Env.
 
         Parameters
         -------
         config : objdict
             Environment configuration
         """
-        super(FastDownwardEnv, self).__init__(config)
+        super().__init__(config)
         self._heuristic_state_features = [
             "Average Value",  # 'Dead Ends Reliable',
             "Max Value",
@@ -53,7 +49,8 @@ class FastDownwardEnv(AbstractEnv):
             "Open List Entries",
             "Varianz",
         ]
-        self._general_state_features = [  # 'evaluated_states', 'evaluations', 'expanded_states',
+        self._general_state_features = [
+            # 'evaluated_states', 'evaluations', 'expanded_states',
             # 'generated_ops',
             # 'generated_states', 'num_variables',
             # 'registered_states', 'reopened_states',
@@ -87,11 +84,11 @@ class FastDownwardEnv(AbstractEnv):
             self.logpath_out = os.devnull
             self.logpath_err = os.devnull
         else:
-            self.logpath_out = os.path.join(config.fd_logs, "fdout.txt")
-            self.logpath_err = os.path.join(config.fd_logs, "fderr.txt")
+            self.logpath_out = Path(config.fd_logs) / "fdout.txt"
+            self.logpath_err = Path(config.fd_logs) / "fderr.txt"
         self.fd_path = config.fd_path
         self.fd = None
-        if "domain_file" in config.keys():
+        if "domain_file" in config:
             self.domain_file = config["domain_file"]
 
         self.socket = None
@@ -106,39 +103,39 @@ class FastDownwardEnv(AbstractEnv):
         self._port_file_id = config.port_file_id
 
         self._transformation_func = None
-        # create state transformation function with inputs (current state, previous state, normalization values)
+        # create state transformation function with inputs
+        # (current state, previous state, normalization values)
         if self.__state_type == StateType.DIFF:
             self._transformation_func = lambda x, y, z, skip: x - y if not skip else x
         elif self.__state_type == StateType.ABSDIFF:
-            self._transformation_func = (
-                lambda x, y, z, skip: abs(x - y) if not skip else x
+            self._transformation_func = lambda x, y, z, skip: (
+                abs(x - y) if not skip else x
             )
         elif self.__state_type == StateType.NORMAL:
-            self._transformation_func = (
-                lambda x, y, z, skip: FastDownwardEnv._save_div(x, z) if not skip else x
+            self._transformation_func = lambda x, y, z, skip: (
+                FastDownwardEnv._save_div(x, z) if not skip else x
             )
         elif self.__state_type == StateType.NORMDIFF:
-            self._transformation_func = (
-                lambda x, y, z, skip: FastDownwardEnv._save_div(x, z)
-                - FastDownwardEnv._save_div(y, z)
+            self._transformation_func = lambda x, y, z, skip: (
+                FastDownwardEnv._save_div(x, z) - FastDownwardEnv._save_div(y, z)
                 if not skip
                 else x
             )
         elif self.__state_type == StateType.NORMABSDIFF:
-            self._transformation_func = (
-                lambda x, y, z, skip: abs(
-                    FastDownwardEnv._save_div(x, z) - FastDownwardEnv._save_div(y, z)
-                )
+            self._transformation_func = lambda x, y, z, skip: (
+                abs(FastDownwardEnv._save_div(x, z) - FastDownwardEnv._save_div(y, z))
                 if not skip
                 else x
             )
 
         self.max_rand_steps = config.max_rand_steps
         self.__start_time = None
-        self.done = True  # Starts as true as the expected behavior is that before normal resets an episode was done.
+        self.done = True  # Starts as true as the expected behavior is that
+        # before normal resets an episode was done.
 
     @property
     def port(self):
+        """Port function."""
         if self._port == 0:
             if self.socket is None:
                 raise ValueError(
@@ -154,14 +151,16 @@ class FastDownwardEnv(AbstractEnv):
         self._port = port
 
     @property
-    def argstring(self):
+    def _argstring(self):
         # if a socket is bound to 0 it will automatically choose a free port
-        return f"rl_eager(rl([{''.join(f'{h},' for h in self.heuristics)[:-1]}],random_seed={self.fd_seed}),rl_control_interval={self.control_interval},rl_client_port={self.port})"
+        return (
+            f"rl_eager(rl([{''.join(f'{h},' for h in self.heuristics)[:-1]}],"
+            f"random_seed={self.fd_seed}),rl_control_interval={self.control_interval},rl_client_port={self.port})"
+        )
 
     @staticmethod
     def _save_div(a, b):
-        """
-        Helper method for safe division
+        """Helper method for safe division.
 
         Parameters
         ----------
@@ -170,7 +169,7 @@ class FastDownwardEnv(AbstractEnv):
         b : list or np.array
             values to divide by
 
-        Returns
+        Returns:
         -------
         np.array
             Division result
@@ -178,8 +177,7 @@ class FastDownwardEnv(AbstractEnv):
         return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
 
     def send_msg(self, msg: bytes):
-        """
-        Send message and prepend the message size
+        """Send message and prepend the message size.
 
         Based on comment from SO see [1]
         [1] https://stackoverflow.com/a/17668009
@@ -190,15 +188,14 @@ class FastDownwardEnv(AbstractEnv):
             The message as byte
         """
         # Prefix each message with a 4-byte length (network byte order)
-        msg = str.encode("{:>04d}".format(len(msg))) + msg
+        msg = str.encode(f"{len(msg):>04d}") + msg
         self.conn.sendall(msg)
 
     def recv_msg(self):
-        """
-        Recieve a whole message. The message has to be prepended with its total size
-        Based on comment from SO see [1]
+        """Recieve a whole message. The message has to be prepended with its total size
+        Based on comment from SO see [1].
 
-        Returns
+        Returns:
         ----------
         bytes
             The message as byte
@@ -212,16 +209,16 @@ class FastDownwardEnv(AbstractEnv):
         return self.recvall(msglen)
 
     def recvall(self, n: int):
-        """
-        Given we know the size we want to recieve, we can recieve that amount of bytes.
-        Based on comment from SO see [1]
+        """Given we know the size we want to recieve,
+        we can recieve that amount of bytes.
+        Based on comment from SO see [1].
 
         Parameters
         ---------
         n: int
             Number of bytes to expect in the data
 
-        Returns
+        Returns:
         ----------
         bytes
             The message as byte
@@ -236,10 +233,9 @@ class FastDownwardEnv(AbstractEnv):
         return data
 
     def _process_data(self):
-        """
-        Split received json into state reward and done
+        """Split received json into state reward and done.
 
-        Returns
+        Returns:
         ----------
         np.array, float, bool
             state, reward, done
@@ -251,7 +247,7 @@ class FastDownwardEnv(AbstractEnv):
         msg = msg.replace("-inf", "0")
         msg = msg.replace("inf", "0")
         # print(msg)
-        data = eval(msg)
+        data = eval(msg)  # noqa: S307
         r = data["reward"]
         done = data["done"]
         del data["reward"]
@@ -285,21 +281,20 @@ class FastDownwardEnv(AbstractEnv):
             self._prev_state = tmp_state
         return np.array(state), r, done
 
-    def step(self, action: typing.Union[int, typing.List[int]]):
-        """
-        Environment step
+    def step(self, action: int | list[int]):
+        """Environment step.
 
         Parameters
         ---------
         action: typing.Union[int, List[int]]
             Parameter(s) to apply
 
-        Returns
+        Returns:
         ----------
         np.array, float, bool, bool, dict
             state, reward, terminated, truncated, info
         """
-        self.done = super(FastDownwardEnv, self).step_()
+        self.done = super().step_()
         if not np.issubdtype(
             type(action), np.integer
         ):  # check for core int and any numpy-int
@@ -325,18 +320,19 @@ class FastDownwardEnv(AbstractEnv):
             self.kill_connection()
         return s, r, terminated, self.done, info
 
-    def reset(self, seed=None, options={}):
-        """
-        Reset environment
+    def reset(self, seed=None, options=None):
+        """Reset environment.
 
-        Returns
+        Returns:
         ----------
         np.array
             State after reset
         dict
             Meta-info
         """
-        super(FastDownwardEnv, self).reset_(seed)
+        if options is None:
+            options = {}
+        super().reset_(seed)
         self._prev_state = None
         self.__start_time = time.time()
         if not self.done:  # This means we interrupt FD before a plan was found
@@ -350,20 +346,20 @@ class FastDownwardEnv(AbstractEnv):
         if not self.socket:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.settimeout(10)
+            self.socket.settimeout(60)
             self.socket.bind((self.host, self.port))
 
         if self.fd:
             self.fd.terminate()
 
-        if self.instance.endswith(".pddl"):
+        if self.instance.parts[-1].endswith(".pddl"):
             command = [
                 "python3",
                 f"{self.fd_path}",
                 self.domain_file,
                 self.instance,
                 "--search",
-                self.argstring,
+                self._argstring,
             ]
         else:
             command = [
@@ -371,7 +367,7 @@ class FastDownwardEnv(AbstractEnv):
                 f"{self.fd_path}",
                 self.instance,
                 "--search",
-                self.argstring,
+                self._argstring,
             ]
 
         with open(self.logpath_out, "a+") as fout, open(self.logpath_err, "a+") as ferr:
@@ -380,17 +376,17 @@ class FastDownwardEnv(AbstractEnv):
 
         # write down port such that FD can potentially read where to connect to
         if self._port_file_id:
-            fp = joinpath(self._config_dir, "port_{:d}.txt".format(self._port_file_id))
+            fp = Path(self._config_dir) / f"port_{self._port_file_id:d}.txt"
         else:
-            fp = joinpath(self._config_dir, f"port_{self.port}.txt")
+            fp = Path(self._config_dir) / f"port_{self.port}.txt"
         with open(fp, "w") as portfh:
             portfh.write(str(self.port))
 
         self.socket.listen()
         try:
             self.conn, address = self.socket.accept()
-        except socket.timeout:
-            raise OSError(
+        except TimeoutError:
+            raise OSError(  # noqa: B904
                 "Fast downward subprocess not reachable (time out). "
                 "Possible solutions:\n"
                 " (1) Did you run './dacbench/envs/rl-plan/fast-downward/build.py' "
@@ -408,13 +404,13 @@ class FastDownwardEnv(AbstractEnv):
         else:
             s, _, _, _, _ = self.step(0)  # hard coded to zero as initial step
 
-        remove(
+        Path.unlink(
             fp
         )  # remove the port file such that there is no chance of loading the old port
         return s, {}
 
     def kill_connection(self):
-        """Kill the connection"""
+        """Kill the connection."""
         if self.conn:
             self.conn.shutdown(2)
             self.conn.close()
@@ -425,30 +421,27 @@ class FastDownwardEnv(AbstractEnv):
             self.socket = None
 
     def close(self):
-        """
-        Close Env
+        """Close Env.
 
-        Returns
+        Returns:
         -------
         bool
             Closing confirmation
         """
         if self.socket is None:
             return True
-        fp = joinpath(self._config_dir, f"port_{self.port}.txt")
-        if os.path.exists(fp):
-            remove(fp)
+        fp = Path(self._config_dir) / f"port_{self.port}.txt"
+        if Path.exists(fp):
+            Path.unlink(fp)
 
         self.kill_connection()
         return True
 
     def render(self, mode: str = "human") -> None:
-        """
-        Required by gym.Env but not implemented
+        """Required by gym.Env but not implemented.
 
         Parameters
         -------
         mode : str
             Rendering mode
         """
-        pass

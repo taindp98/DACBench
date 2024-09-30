@@ -1,10 +1,10 @@
 .. _luby:
 
-======================
+=======================
 The Luby Toy Benchmark
-======================
+=======================
 
-| **Task:** lning the Luby sequence with variations
+| **Task:** learning the Luby sequence with variations
 | **Cost:** correctness of sequence element prediction
 | **Number of hyperparameters to control:** one integer
 | **State Information:** Actions and timesteps of the last three iterations

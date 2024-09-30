@@ -18,14 +18,11 @@ Welcome to DACBench's documentation!
  :caption: The Benchmarks:
 
  source/benchmarks
- source/benchmark_docs/sigmoid
+ source/benchmark_docs/function_approximation
  source/benchmark_docs/luby
  source/benchmark_docs/toy_sgd
- source/benchmark_docs/geometric
- source/benchmark_docs/fastdownward
  source/benchmark_docs/theory
  source/benchmark_docs/cma
- source/benchmark_docs/modcma
  source/benchmark_docs/sgd
 
 .. toctree::

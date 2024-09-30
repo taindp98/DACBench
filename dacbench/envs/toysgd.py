@@ -1,48 +1,27 @@
-from typing import Dict, Tuple, Union
+"""Environment for sgd with toy functions."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
-from numpy.polynomial import Polynomial
 
 from dacbench import AbstractMADACEnv
 
-
-def create_polynomial_instance_set(
-    out_fname: str,
-    n_samples: int = 100,
-    order: int = 2,
-    low: float = -10,
-    high: float = 10,
-):
-    """Make instance set."""
-    instances = []
-    for i in range(n_samples):
-        coeffs = sample_coefficients(order=order, low=low, high=high)
-        instance = {
-            "ID": i,
-            "family": "polynomial",
-            "order": order,
-            "low": low,
-            "high": high,
-            "coefficients": coeffs,
-        }
-        instances.append(instance)
-    df = pd.DataFrame(instances)
-    df.to_csv(out_fname, sep=";", index=False)
+if TYPE_CHECKING:
+    from dacbench.envs.env_utils.toy_functions import AbstractFunction
 
 
-def sample_coefficients(order: int = 2, low: float = -10, high: float = 10):
-    """Sample function coefficients."""
-    n_coeffs = order + 1
-    coeffs = np.zeros((n_coeffs,))
-    coeffs[0] = np.random.uniform(0, high, size=1)
-    coeffs[1:] = np.random.uniform(low, high, size=n_coeffs - 1)
-    return coeffs
+@dataclass
+class ToySGDInstance:
+    """Toy SGD Instance."""
+
+    function: AbstractFunction
 
 
 class ToySGDEnv(AbstractMADACEnv):
-    """
-    Optimize toy functions with SGD + Momentum.
+    """Optimize toy functions with SGD + Momentum.
 
     Action: [log_learning_rate, log_momentum] (log base 10)
     State: Dict with entries remaining_budget, gradient, learning_rate, momentum
@@ -60,59 +39,28 @@ class ToySGDEnv(AbstractMADACEnv):
 
     def __init__(self, config):
         """Init env."""
-        super(ToySGDEnv, self).__init__(config)
-        self.n_steps_max = config.get("cutoff", 1000)
+        super().__init__(config)
 
+        if config["batch_size"]:
+            self.batch_size = config["batch_size"]
         self.velocity = 0
-        self.gradient = 0
+        self.gradient = np.zeros(self.batch_size)
         self.history = []
-        self.n_dim = None  # type: Optional[int]
+        self.n_dim = None
         self.objective_function = None
-        self.objective_function_deriv = None
-        self.x_min = None
-        self.f_min = None
         self.x_cur = None
         self.f_cur = None
-        self.momentum = 0  # type: Optional[float]
-        self.learning_rate = None  # type: Optional[float]
-        self.n_steps = 0  # type: Optional[int]
+        self.momentum = 0
+        self.learning_rate = None
+        self.rng = np.random.default_rng(self.initial_seed)
 
-    def build_objective_function(self):
-        """Make base function."""
-        if self.instance["family"] == "polynomial":
-            order = int(self.instance["order"])
-            if order != 2:
-                raise NotImplementedError(
-                    "Only order 2 is currently implemented for polynomial functions."
-                )
-            self.n_dim = order
-            coeffs_str = self.instance["coefficients"]
-            coeffs_str = coeffs_str.strip("[]")
-            coeffs = [float(item) for item in coeffs_str.split()]
-            self.objective_function = Polynomial(coef=coeffs)
-            self.objective_function_deriv = self.objective_function.deriv(
-                m=1
-            )  # lambda x0: derivative(self.objective_function, x0, dx=1.0, n=1, args=(), order=3)
-            self.x_min = -coeffs[1] / (
-                2 * coeffs[0] + 1e-10
-            )  # add small epsilon to avoid numerical instabilities
-            self.f_min = self.objective_function(self.x_min)
-
-            self.x_cur = self.get_initial_position()
-        else:
-            raise NotImplementedError(
-                "No other function families than polynomial are currently supported."
-            )
-
-    def get_initial_position(self):
-        """Get initial position."""
-        return 0  # np.random.uniform(-5, 5, size=self.n_dim-1)
+        self.get_reward = config.get("reward_function", self.get_default_reward)
+        self.get_state = config.get("state_method", self.get_default_state)
 
     def step(
-        self, action: Union[float, Tuple[float, float]]
-    ) -> Tuple[Dict[str, float], float, bool, Dict]:
-        """
-        Take one step with SGD.
+        self, action: float | tuple[float, float]
+    ) -> tuple[dict[str, float], float, bool, dict]:
+        """Take one step with SGD.
 
         Parameters
         ----------
@@ -120,19 +68,20 @@ class ToySGDEnv(AbstractMADACEnv):
             If scalar, action = (log_learning_rate)
             If tuple, action = (log_learning_rate, log_momentum)
 
-        Returns
+        Returns:
         -------
         Tuple[Dict[str, float], float, bool, Dict]
 
             - state : Dict[str, float]
-                State with entries "remaining_budget", "gradient", "learning_rate", "momentum"
+                State with entries:
+                "remaining_budget", "gradient", "learning_rate", "momentum"
             - reward : float
             - terminated : bool
             - truncated : bool
             - info : Dict
 
         """
-        truncated = super(ToySGDEnv, self).step_()
+        truncated = super().step_()
         info = {}
 
         # parse action
@@ -150,34 +99,16 @@ class ToySGDEnv(AbstractMADACEnv):
             self.momentum * self.velocity + self.learning_rate * self.gradient
         )
         self.x_cur -= self.velocity
-        self.gradient = self.objective_function_deriv(self.x_cur)
+        self.gradient = self.objective_function.deriv(self.x_cur)
 
-        # State
-        remaining_budget = self.n_steps_max - self.n_steps
-        state = {
-            "remaining_budget": remaining_budget,
-            "gradient": self.gradient,
-            "learning_rate": self.learning_rate,
-            "momentum": self.momentum,
-        }
-
-        # Reward
         # current function value
         self.f_cur = self.objective_function(self.x_cur)
-        # log regret
-        log_regret = np.log10(np.abs(self.f_min - self.f_cur))
-        reward = -log_regret
-
         self.history.append(self.x_cur)
 
-        # Stop criterion
-        self.n_steps += 1
+        return self.get_state(self), self.get_reward(self), False, truncated, info
 
-        return state, reward, False, truncated, info
-
-    def reset(self, seed=None, options={}):
-        """
-        Reset environment.
+    def reset(self, seed=None, options=None):
+        """Reset environment.
 
         Parameters
         ----------
@@ -186,7 +117,7 @@ class ToySGDEnv(AbstractMADACEnv):
         options : dict
             options dict (not used)
 
-        Returns
+        Returns:
         -------
         np.array
             Environment state
@@ -194,27 +125,38 @@ class ToySGDEnv(AbstractMADACEnv):
             Meta-info
 
         """
-        super(ToySGDEnv, self).reset_(seed)
+        if options is None:
+            options = {}
+        super().reset_(seed)
 
         self.velocity = 0
-        self.gradient = 0
+        self.gradient = np.zeros(self.batch_size)
         self.history = []
-        self.objective_function = None
-        self.objective_function_deriv = None
-        self.x_min = None
-        self.f_min = None
-        self.x_cur = None
-        self.f_cur = None
+
+        self.objective_function = self.instance.function
+        self.x_cur = self.rng.uniform(-5, 5, size=self.batch_size)
+        self.f_cur = self.objective_function(self.x_cur)
+
         self.momentum = 0
         self.learning_rate = 0
-        self.n_steps = 0
-        self.build_objective_function()
+
+        return self.get_state(self), {}
+
+    def get_default_reward(self, _):
+        """Default reward: negative log regret."""
+        log_regret = np.log10(np.abs(self.objective_function.fmin - self.f_cur))
+        return -np.mean(log_regret)
+
+    def get_default_state(self, _):
+        """Default state: remaining_budget, gradient, learning_rate, momentum."""
+        # TODO: add instance description?
+        remaining_budget = self.n_steps - self.c_step
         return {
-            "remaining_budget": self.n_steps_max,
+            "remaining_budget": remaining_budget,
             "gradient": self.gradient,
             "learning_rate": self.learning_rate,
             "momentum": self.momentum,
-        }, {}
+        }
 
     def render(self, **kwargs):
         """Render progress."""
@@ -248,4 +190,3 @@ class ToySGDEnv(AbstractMADACEnv):
 
     def close(self):
         """Close env."""
-        pass

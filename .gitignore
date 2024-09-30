@@ -16,5 +16,15 @@ port_*.txt
 tests/data/
 test/*.json
 
-# pycharm specific stuff
+# pycharm/vscode specific stuff
 .idea
+.vscode/
+
+#datasets for sgd
+*MNIST/raw*
+*raw*
+*cifar-10-batches-py*
+*cifar*.tar.gz
+
+# venvs
+*.lock*

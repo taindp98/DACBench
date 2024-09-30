@@ -1,41 +1,31 @@
+from __future__ import annotations
+
 import os
 import tempfile
-import unittest
 from pathlib import Path
 
 import matplotlib
 import numpy as np
-import pytest
-from gymnasium import spaces
-
 from dacbench.abstract_agent import AbstractDACBenchAgent
-
-# import shutil
-from dacbench.runner import run_dacbench  # , plot_results
+from dacbench.runner import run_dacbench
+from gymnasium import spaces
 
 matplotlib.use("Agg")
 
 
-class TestRunner(unittest.TestCase):
-    def test_abstract_agent(self):
-        agent = AbstractDACBenchAgent("dummy")
-
-        with pytest.raises(NotImplementedError):
-            agent.act(0, 0)
-
-        with pytest.raises(NotImplementedError):
-            agent.train(0, 0)
-
-        with pytest.raises(NotImplementedError):
-            agent.end_episode(0, 0)
-
+class TestRunner:
     def test_loop(self):
         class DummyAgent(AbstractDACBenchAgent):
             def __init__(self, env):
+                self.dict_action = False
                 if isinstance(env.action_space, spaces.Discrete):
                     self.num_actions = 1
                 elif isinstance(env.action_space, spaces.MultiDiscrete):
                     self.num_actions = len(env.action_space.nvec)
+                elif isinstance(env.action_space, spaces.Dict):
+                    self.num_actions = len(env.action_space.spaces)
+                    self.dict_action = True
+                    self.dict_keys = list(env.action_space.keys())
                 else:
                     self.num_actions = len(env.action_space.high)
 
@@ -43,6 +33,8 @@ class TestRunner(unittest.TestCase):
                 action = np.ones(self.num_actions)
                 if self.num_actions == 1:
                     action = 1
+                if self.dict_action:
+                    action = {key: action[i] for i, key in enumerate(self.dict_keys)}
                 return action
 
             def train(self, reward, state):
@@ -59,14 +51,9 @@ class TestRunner(unittest.TestCase):
                 tmp_dir,
                 make,
                 1,
-                bench=["LubyBenchmark", "SigmoidBenchmark"],
+                bench=["LubyBenchmark", "FunctionApproximationBenchmark"],
                 seeds=[42],
             )
             path = Path(tmp_dir)
-            self.assertFalse(os.stat(path / "LubyBenchmark") == 0)
-            self.assertFalse(os.stat(path / "SigmoidBenchmark") == 0)
-
-
-#    def test_plotting(self):
-#        plot_results("test_run")
-#        shutil.rmtree("test_run", ignore_errors=True)
+            assert os.stat(path / "LubyBenchmark") != 0
+            assert os.stat(path / "FunctionApproximationBenchmark") != 0

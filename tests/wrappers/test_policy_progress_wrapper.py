@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import unittest
 from unittest import mock
 
 import numpy as np
-
-from dacbench.benchmarks import SigmoidBenchmark
+from dacbench.benchmarks import FunctionApproximationBenchmark
 from dacbench.wrappers import PolicyProgressWrapper
 
 
@@ -12,41 +13,40 @@ def _sig(x, scaling, inflection):
 
 
 def compute_optimal_sigmoid(instance):
-    sig_values = [_sig(i, instance[1], instance[0]) for i in range(10)]
-    optimal = [np.around(x) for x in sig_values]
-    return [optimal]
+    sig_values = []
+    for i in range(10):
+        func_values = [f(i) for f in instance.functions]
+        sig_values.append(func_values)
+    return sig_values
 
 
 class TestPolicyProgressWrapper(unittest.TestCase):
     def test_init(self):
-        bench = SigmoidBenchmark()
-        bench.set_action_values((3,))
+        bench = FunctionApproximationBenchmark()
         env = bench.get_environment()
         wrapped = PolicyProgressWrapper(env, compute_optimal_sigmoid)
-        self.assertTrue(len(wrapped.policy_progress) == 0)
-        self.assertTrue(len(wrapped.episode) == 0)
-        self.assertFalse(wrapped.compute_optimal is None)
+        assert len(wrapped.policy_progress) == 0
+        assert len(wrapped.episode) == 0
+        assert wrapped.compute_optimal is not None
 
     def test_step(self):
-        bench = SigmoidBenchmark()
-        bench.set_action_values((3,))
-        bench.config.instance_set = {0: [0, 0], 1: [1, 1], 2: [3, 4], 3: [5, 6]}
+        bench = FunctionApproximationBenchmark()
+        bench.config.omit_instance_type = True
         env = bench.get_environment()
         wrapped = PolicyProgressWrapper(env, compute_optimal_sigmoid)
 
         wrapped.reset()
         action = env.action_space.sample()
         _, _, terminated, truncated, _ = wrapped.step(action)
-        self.assertTrue(len(wrapped.episode) == 1)
+        assert len(wrapped.episode) == 1
         while not (terminated or truncated):
             _, _, terminated, truncated, _ = wrapped.step(action)
-        self.assertTrue(len(wrapped.episode) == 0)
-        self.assertTrue(len(wrapped.policy_progress) == 1)
+        assert len(wrapped.episode) == 0
+        assert len(wrapped.policy_progress) == 1
 
     @mock.patch("dacbench.wrappers.policy_progress_wrapper.plt")
     def test_render(self, mock_plt):
-        bench = SigmoidBenchmark()
-        bench.set_action_values((3,))
+        bench = FunctionApproximationBenchmark()
         env = bench.get_environment()
         env = PolicyProgressWrapper(env, compute_optimal_sigmoid)
         for _ in range(2):
@@ -55,4 +55,4 @@ class TestPolicyProgressWrapper(unittest.TestCase):
             while not (terminated or truncated):
                 _, _, terminated, truncated, _ = env.step(env.action_space.sample())
         env.render_policy_progress()
-        self.assertTrue(mock_plt.show.called)
+        assert mock_plt.show.called

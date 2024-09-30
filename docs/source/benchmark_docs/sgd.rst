@@ -6,7 +6,7 @@ The SGD Deep Learning Benchmark
 
 | **Task:** control the learning rate in deep learning
 | **Cost:** log differential validation loss
-| **Number of hyperparameters to control:** one float
+| **Number of hyperparameters to control:** one or two floats
 | **State Information:** predictive change variance, predictive change variance, loss variance, loss variance uncertainty, current learning rate, training loss, validation loss, step, alignment, crashed
 | **Noise Level:** fairly large
 | **Instance space:** dataset, network architecture, optimizer

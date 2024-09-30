@@ -1,257 +1,207 @@
-"""
-CMA-ES environment adapted from CMAWorld in
-"Learning Step-size Adaptation in CMA-ES"
-by G.Shala and A. Biedenkapp and N.Awad and S. Adriaensen and M.Lindauer and F. Hutter.
-Original author: Gresa Shala
-"""
+"""CMA ES Environment."""
 
-import resource
-import sys
-import threading
-import warnings
-from collections import deque
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-from cma import bbobbenchmarks as bn
-from cma.evolution_strategy import CMAEvolutionStrategy
+from modcma import ModularCMAES, Parameters
 
-from dacbench import AbstractEnv
+from dacbench import AbstractMADACEnv
 
-resource.setrlimit(resource.RLIMIT_STACK, (2**35, -1))
-sys.setrecursionlimit(10**9)
+if TYPE_CHECKING:
+    from env_utils.toy_functions import AbstractFunction
 
-warnings.filterwarnings("ignore")
+BINARIES = {True: 1, False: 0}
+STEP_SIZE_ADAPTATION = {
+    "csa": 0,
+    "tpa": 1,
+    "msr": 2,
+    "xnes": 3,
+    "m-xnes": 4,
+    "lp-xnes": 5,
+    "psr": 6,
+}
+MIRRORED = {"None": 0, "mirrored": 1, "mirrored pairwise": 2}
+BASE_SAMPLER = {"gaussian": 0, "sobol": 1, "halton": 2}
+WEIGHTS_OPTION = {"default": 0, "equal": 1, "1/2^lambda": 2}
+LOCAL_RESTART = {"None": 0, "IPOP": 1, "BIPOP": 2}
+BOUND_CORRECTION = {
+    "None": 0,
+    "saturate": 1,
+    "unif_resample": 2,
+    "COTN": 3,
+    "toroidal": 4,
+    "mirror": 5,
+}
 
 
-def _norm(x):
-    return np.sqrt(np.sum(np.square(x)))
+@dataclass
+class CMAESInstance:
+    """CMA-ES Instance."""
+
+    target_function: AbstractFunction
+    dim: int
+    fid: int
+    iid: int
+    active: bool
+    elitist: bool
+    orthogonal: bool
+    sequential: bool
+    threshold_convergence: bool
+    step_size_adaptation: str
+    mirrored: str
+    base_sampler: str
+    weights_option: str
+    local_restart: str
+    bound_correction: str
 
 
-# IDEA: if we ask cma instead of ask_eval, we could make this parallel
-
-
-class CMAESEnv(AbstractEnv):
-    """
-    Environment to control the step size of CMA-ES
-    """
+class CMAESEnv(AbstractMADACEnv):
+    """The CMA ES environment controlles the step size on BBOB functions."""
 
     def __init__(self, config):
-        """
-        Initialize CMA Env
+        """Initialize the environment."""
+        super().__init__(config)
 
-        Parameters
-        -------
-        config : objdict
-            Environment configuration
-        """
-        super(CMAESEnv, self).__init__(config)
-        self.b = None
-        self.bounds = [None, None]
-        self.fbest = None
-        self.history_len = config.hist_length
-        self.history = deque(maxlen=self.history_len)
-        self.past_obj_vals = deque(maxlen=self.history_len)
-        self.past_sigma = deque(maxlen=self.history_len)
-        self.solutions = None
-        self.func_values = []
-        self.cur_obj_val = -1
-        # self.chi_N = dim ** 0.5 * (1 - 1.0 / (4.0 * dim) + 1.0 / (21.0 * dim ** 2))
-        self.lock = threading.Lock()
-        self.popsize = config["popsize"]
-        self.cur_ps = self.popsize
+        self.es = None
+        self.budget = config.budget
+        self.total_budget = self.budget
 
-        if "reward_function" in config.keys():
-            self.get_reward = config["reward_function"]
+        if not config.get("normalize_reward", False):
+            self.get_reward = config.get("reward_function", self.get_default_reward)
         else:
-            self.get_reward = self.get_default_reward
+            self.get_reward = config.get("reward_function", self.get_normalized_reward)
 
-        if "state_method" in config.keys():
-            self.get_state = config["state_method"]
-        else:
-            self.get_state = self.get_default_state
+        self.get_state = config.get("state_method", self.get_default_state)
 
-    def step(self, action):
-        """
-        Execute environment step
+    def _uniform_name(self, name):
+        # Convert name of parameters uniformly to lowercase,
+        # separated with _ and no numbers
+        pattern = r"^\d+_"
 
-        Parameters
-        ----------
-        action : list
-            action to execute
+        # Use re.sub to remove the leading number and underscore
+        result = re.sub(pattern, "", name)
+        return result.lower()
 
-        Returns
-        -------
-        np.array, float, bool, dict
-            state, reward, done, info
-        """
-        truncated = super(CMAESEnv, self).step_()
-        self.history.append([self.f_difference, self.velocity])
-        terminated = self.es.stop() != {}
-        if not (terminated or truncated):
-            """Moves forward in time one step"""
-            sigma = action
-            self.es.tell(self.solutions, self.func_values)
-            self.es.sigma = np.maximum(sigma, 0.2)
-            self.solutions, self.func_values = self.es.ask_and_eval(self.fcn)
-
-        self.f_difference = np.nan_to_num(
-            np.abs(np.amax(self.func_values) - self.cur_obj_val)
-            / float(self.cur_obj_val)
+    def reset(self, seed=None, options=None):
+        """Reset the environment."""
+        if options is None:
+            options = {}
+        super().reset_(seed)
+        self.representation_dict = {
+            "active": BINARIES[self.instance.active],
+            "elitist": BINARIES[self.instance.elitist],
+            "orthogonal": BINARIES[self.instance.orthogonal],
+            "sequential": BINARIES[self.instance.sequential],
+            "threshold_convergence": BINARIES[self.instance.threshold_convergence],
+            "step_size_adaptation": STEP_SIZE_ADAPTATION[
+                self.instance.step_size_adaptation
+            ],
+            "mirrored": MIRRORED[self.instance.mirrored],
+            "base_sampler": BASE_SAMPLER[self.instance.base_sampler],
+            "weights_option": WEIGHTS_OPTION[self.instance.weights_option],
+            "local_restart": LOCAL_RESTART[self.instance.local_restart],
+            "bound_correction": BOUND_CORRECTION[self.instance.bound_correction],
+        }
+        self.objective = self.instance.target_function
+        self.es = ModularCMAES(
+            self.objective,
+            parameters=Parameters.from_config_array(
+                self.instance.dim,
+                np.array(list(self.representation_dict.values())).astype(int),
+            ),
         )
-        self.velocity = np.nan_to_num(
-            np.abs(np.amin(self.func_values) - self.cur_obj_val)
-            / float(self.cur_obj_val)
-        )
-        self.fbest = min(self.es.best.f, np.amin(self.func_values))
-
-        self.past_obj_vals.append(self.cur_obj_val)
-        self.past_sigma.append(self.cur_sigma)
-        self.cur_ps = _norm(self.es.adapt_sigma.ps)
-        self.cur_loc = self.es.best.x
-        try:
-            self.cur_sigma = [self.es.sigma[0]]
-        except:
-            self.cur_sigma = [self.es.sigma]
-        self.cur_obj_val = self.es.best.f
-
-        return self.get_state(self), self.get_reward(self), terminated, truncated, {}
-
-    def reset(self, seed=None, options={}):
-        """
-        Reset environment
-
-        Returns
-        -------
-        np.array
-            Environment state
-        """
-        super(CMAESEnv, self).reset_(seed)
-        self.history.clear()
-        self.past_obj_vals.clear()
-        self.past_sigma.clear()
-        self.cur_loc = self.instance[3]
-        self.dim = self.instance[1]
-        self.init_sigma = self.instance[2]
-        self.cur_sigma = [self.init_sigma]
-        self.fcn = bn.instantiate(self.instance[0], seed=self.seed)[0]
-
-        self.func_values = []
-        self.f_vals = deque(maxlen=self.popsize)
-        self.es = CMAEvolutionStrategy(
-            self.cur_loc,
-            self.init_sigma,
-            {"popsize": self.popsize, "bounds": self.bounds, "seed": self.initial_seed},
-        )
-        self.solutions, self.func_values = self.es.ask_and_eval(self.fcn)
-        self.fbest = self.func_values[np.argmin(self.func_values)]
-        self.f_difference = np.abs(
-            np.amax(self.func_values) - self.cur_obj_val
-        ) / float(self.cur_obj_val)
-        self.velocity = np.abs(np.amin(self.func_values) - self.cur_obj_val) / float(
-            self.cur_obj_val
-        )
-        self.es.mean_old = self.es.mean
-        self.history.append([self.f_difference, self.velocity])
         return self.get_state(self), {}
 
-    def close(self):
-        """
-        No additional cleanup necessary
+    def step(self, action):
+        """Make one step of the environment."""
+        truncated = super().step_()
 
-        Returns
-        -------
-        bool
-            Cleanup flag
-        """
+        # Get all action values and uniform names
+        complete_action = {}
+        if isinstance(action, dict):
+            for hp in action:
+                n_name = self._uniform_name(hp)
+                if n_name == "step_size":
+                    # Step size is set separately
+                    self.es.parameters.sigma = action[hp][0]
+                else:
+                    # Save parameter values from actions
+                    complete_action[n_name] = action[hp]
+
+            # Complete the given action with defaults
+            for default in self.representation_dict:
+                if default == "step_size":
+                    continue
+                if default not in complete_action:
+                    complete_action[default] = self.representation_dict[default]
+            complete_action = complete_action.values()
+        else:
+            raise ValueError("Action must be a Dict")
+
+        new_parameters = Parameters.from_config_array(
+            self.instance.dim, complete_action
+        )
+        self.es.parameters.update(
+            {m: getattr(new_parameters, m) for m in Parameters.__modules__}
+        )
+
+        terminated = not self.es.step()
+        return self.get_state(self), self.get_reward(self), terminated, truncated, {}
+
+    def close(self):
+        """Closes the environment."""
         return True
 
-    def render(self, mode: str = "human"):
+    def get_default_reward(self, *_):
+        """The default reward function.
+
+        Args:
+            _ (_type_): Empty parameter, which can be used when overriding
+
+        Returns:
+            float: The calculated reward
         """
-        Render env in human mode
-
-        Parameters
-        ----------
-        mode : str
-            Execution mode
-        """
-        if mode != "human":
-            raise NotImplementedError
-
-        pass
-
-    def get_default_reward(self, _):
-        """
-        Compute reward
-
-        Returns
-        -------
-        float
-            Reward
-
-        """
-        reward = min(self.reward_range[1], max(self.reward_range[0], -self.fbest))
-        return reward
-
-    def get_default_state(self, _):
-        """
-        Gather state description
-
-        Returns
-        -------
-        dict
-            Environment state
-
-        """
-        past_obj_val_deltas = []
-        for i in range(1, len(self.past_obj_vals)):
-            past_obj_val_deltas.append(
-                (self.past_obj_vals[i] - self.past_obj_vals[i - 1] + 1e-3)
-                / float(self.past_obj_vals[i - 1])
-            )
-        if len(self.past_obj_vals) > 0:
-            past_obj_val_deltas.append(
-                (self.cur_obj_val - self.past_obj_vals[-1] + 1e-3)
-                / float(self.past_obj_vals[-1])
-            )
-        past_obj_val_deltas = np.array(past_obj_val_deltas).reshape(-1)
-
-        history_deltas = []
-        for i in range(len(self.history)):
-            history_deltas.append(self.history[i])
-        history_deltas = np.array(history_deltas).reshape(-1)
-        past_sigma_deltas = []
-        for i in range(len(self.past_sigma)):
-            past_sigma_deltas.append(self.past_sigma[i])
-        past_sigma_deltas = np.array(past_sigma_deltas).reshape(-1)
-        past_obj_val_deltas = np.hstack(
-            (
-                np.zeros((self.history_len - past_obj_val_deltas.shape[0],)),
-                past_obj_val_deltas,
-            )
-        )
-        history_deltas = np.hstack(
-            (
-                np.zeros((self.history_len * 2 - history_deltas.shape[0],)),
-                history_deltas,
-            )
-        )
-        past_sigma_deltas = np.hstack(
-            (
-                np.zeros((self.history_len - past_sigma_deltas.shape[0],)),
-                past_sigma_deltas,
-            )
+        return max(
+            self.reward_range[0], min(self.reward_range[1], -self.es.parameters.fopt)
         )
 
-        cur_loc = np.array(self.cur_loc)
-        cur_ps = np.array([self.cur_ps])
-        cur_sigma = np.array(self.cur_sigma)
+    def get_normalized_reward(self, *_):
+        """Normalize each reward within domain bounds.
 
-        state = {
-            "current_loc": cur_loc,
-            "past_deltas": past_obj_val_deltas,
-            "current_ps": cur_ps,
-            "current_sigma": cur_sigma,
-            "history_deltas": history_deltas,
-            "past_sigma_deltas": past_sigma_deltas,
-        }
-        return state
+        Args:
+            _ (_type_): Empty parameter, which can be used when overriding
+
+        Returns:
+            float: The calculated reward
+        """
+        obj_min, obj_max = self.objective.fmin, 0
+        current_reward = -self.es.parameters.fopt
+        norm_reward = (current_reward - obj_min) / (obj_max - obj_min)
+        return max(self.reward_range[0], min(self.reward_range[1], norm_reward))
+
+    def get_default_state(self, *_):
+        """Default state function.
+
+        Args:
+            _ (_type_): Empty parameter, which can be used when overriding
+
+        Returns:
+            dict: The current state
+        """
+        return np.array(
+            [
+                self.es.parameters.lambda_,
+                self.es.parameters.sigma,
+                self.budget - self.es.parameters.used_budget,
+                self.instance.fid,
+                self.instance.iid,
+            ]
+        )
+
+    def render(self, mode="human"):
+        """Render progress."""
+        raise NotImplementedError("CMA-ES does not support rendering at this point")

@@ -1,17 +1,38 @@
+from __future__ import annotations
+
 import unittest
 
+import gymnasium as gym
 import numpy as np
-
 from dacbench import AbstractEnv
-from dacbench.benchmarks import CMAESBenchmark
 from dacbench.wrappers import ObservationWrapper
+
+dummy_config = {
+    "instance_set": {0: 1},
+    "benchmark_info": None,
+    "cutoff": 10,
+    "observation_space": gym.spaces.Dict(
+        {
+            "one": gym.spaces.Discrete(2),
+            "two": gym.spaces.Box(low=np.array([-1, 1]), high=np.array([1, 5])),
+        }
+    ),
+    "reward_range": (0, 1),
+    "action_space": gym.spaces.Discrete(2),
+}
+
+
+class DummyDictEnv(AbstractEnv):
+    def step(self, _):
+        return {"one": 1, "two": np.array([1, 2])}, 0, False, False, {}
+
+    def reset(self, seed=None, options=None):
+        return {}, {}
 
 
 class TestObservationTrackingWrapper(unittest.TestCase):
     def get_test_env(self) -> AbstractEnv:
-        bench = CMAESBenchmark()
-        env = bench.get_benchmark(seed=42)
-        return env
+        return DummyDictEnv(dummy_config)
 
     def test_flatten(self):
         wrapped_env = ObservationWrapper(self.get_test_env())
@@ -29,14 +50,14 @@ class TestObservationTrackingWrapper(unittest.TestCase):
         env = self.get_test_env()
         reset_state_env, info = env.reset()
         step_state_env, *rest_env = env.step(action)
-        self.assertIsInstance(reset_state_env, dict)
-        self.assertTrue(issubclass(type(info), dict))
+        assert isinstance(reset_state_env, dict)
+        assert issubclass(type(info), dict)
 
         wrapped_env = ObservationWrapper(self.get_test_env())
         reset_state_wrapped, info = wrapped_env.reset()
         step_state_wrapped, *rest_wrapped = wrapped_env.step(action)
 
-        self.assertIsInstance(reset_state_wrapped, np.ndarray)
+        assert isinstance(reset_state_wrapped, np.ndarray)
         self.assertListEqual(rest_env[1:], rest_wrapped[1:])
 
         np.testing.assert_array_equal(

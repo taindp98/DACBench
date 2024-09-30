@@ -32,10 +32,10 @@ By adding more wrappers, you will also be provided with more information.
 The stored data can then be loaded into pandas dataframes:
 
 .. code-block:: python
-
+    
     from dacbench.logger import load_logs, log2dataframe
 
-    logs = load_logs("your/path/PerformancyTrackingWrapper.jsonl")
+    logs = load_logs("your/path/Performance∂TrackingWrapper.jsonl")
     df = log2dataframe(logs)
 
 .. automodule:: dacbench.logger

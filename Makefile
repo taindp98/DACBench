@@ -22,13 +22,10 @@ PYTHON ?= python
 CYTHON ?= cython
 PYTEST ?= python -m pytest
 CTAGS ?= ctags
-PIP ?= python -m pip
+PIP ?= uv pip
 MAKE ?= make
-BLACK ?= python -m black
-ISORT ?= python -m isort --profile black
-PYDOCSTYLE ?= python -m pydocstyle
-PRECOMMIT ?= pre-commit
-FLAKE8 ?= python -m flake8
+RUFF ?= uvx ruff
+PRECOMMIT ?= uvx pre-commit
 
 DIR := ${CURDIR}
 DIST := ${CURDIR}/dist
@@ -36,35 +33,22 @@ DOCDIR := ${CURDIR}/docs
 INDEX_HTML := file://${DOCDIR}/html/build/index.html
 
 install-dev:
-	$(PIP) install -e ".[dev, docs, all, examples]"
+	$(PIP) install -e ".[dev, docs, all, example]"
 	pre-commit install
 
-check-black:
-	$(BLACK)  dacbench tests --check || :
-
-check-isort:
-	$(ISORT) dacbench tests --check || :
-
-check-pydocstyle:
-	$(PYDOCSTYLE) dacbench || :
-
-check-flake8:
-	$(FLAKE8) dacbench || :
-	$(FLAKE8) tests || :
+install:
+	$(PIP) install -e .
 
 # pydocstyle does not have easy ignore rules, instead, we include as they are covered
-check: check-black check-isort check-flake8 check-pydocstyle
+check:
+	$(RUFF) check --fix dacbench
+	$(RUFF) check dacbench || :
 
 pre-commit:
 	$(PRECOMMIT) run --all-files
 
-format-black:
-	$(BLACK) dacbench tests
-
-format-isort:
-	$(ISORT) dacbench tests
-
-format: format-black format-isort
+format: 
+	$(RUFF) format dacbench || :
 
 test:
 	$(PYTEST) tests
@@ -75,9 +59,15 @@ clean-doc:
 clean-build:
 	$(PYTHON) setup.py clean
 	rm -rf ${DIST}
+	rm -rf build
+
+clean-examples:
+	rm -rf examples/plotting
+	rm -rf examples/wrappers
+	rm -rf dacbench_tabular
 
 # Clean up any builds in ./dist as well as doc
-clean: clean-doc clean-build
+clean: clean-doc clean-build clean-examples
 
 # Build a distribution in ./dist
 build:
