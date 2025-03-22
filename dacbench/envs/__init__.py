@@ -8,7 +8,7 @@ from dacbench.envs.function_approximation import (
     FunctionApproximationInstance,
 )
 from dacbench.envs.luby import LubyEnv, LubyInstance, luby_gen
-from dacbench.envs.theory import TheoryEnv
+from dacbench.envs.theory import RLSTheoryEnv, OLLGATheoryEnv
 from dacbench.envs.toysgd import ToySGDEnv, ToySGDInstance
 
 __all__ = [
@@ -20,7 +20,8 @@ __all__ = [
     #   "FastDownwardEnv",
     "ToySGDEnv",
     "ToySGDInstance",
-    "TheoryEnv",
+    "RLSTheoryEnv",
+    "OLLGATheoryEnv",
 ]
 
 modcma_spec = importlib.util.find_spec("modcma")

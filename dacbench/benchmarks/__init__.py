@@ -43,7 +43,7 @@ else:
 theory_spec = importlib.util.find_spec("uuid")
 found = theory_spec is not None
 if found:
-    from dacbench.benchmarks.theory_benchmark import TheoryBenchmark
+    from dacbench.benchmarks.theory_benchmark import RLSTheoryBenchmark, OLLGATheoryBenchmark
 
     __all__.append("TheoryBenchmark")
 else:
